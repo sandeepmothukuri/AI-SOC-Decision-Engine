@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620">
+<rect width="1200" height="620" fill="#0b1220"/>
+<text x="60" y="60" fill="#f8fafc" font-family="Arial,sans-serif" font-size="30" font-weight="700">Network Sensor Deployment</text>
+<text x="60" y="92" fill="#94a3b8" font-family="Arial,sans-serif" font-size="16">Passive network visibility path for Suricata and Zeek</text>
+<g font-family="Arial,sans-serif">
+<rect x="70" y="160" width="220" height="110" rx="14" fill="#172554" stroke="#60a5fa" stroke-width="2"/><text x="180" y="205" text-anchor="middle" fill="#dbeafe" font-size="22" font-weight="700">Host / Lab NIC</text><text x="180" y="235" text-anchor="middle" fill="#93c5fd" font-size="15">SOC_SENSOR_INTERFACE</text>
+<rect x="350" y="130" width="250" height="170" rx="14" fill="#172554" stroke="#38bdf8" stroke-width="2"/><text x="475" y="180" text-anchor="middle" fill="#e0f2fe" font-size="23" font-weight="700">Suricata</text><text x="475" y="212" text-anchor="middle" fill="#bae6fd" font-size="15">IDS / IPS engine</text><text x="475" y="242" text-anchor="middle" fill="#bae6fd" font-size="15">EVE JSON telemetry</text><text x="475" y="270" text-anchor="middle" fill="#7dd3fc" font-size="14">NET_RAW · NET_ADMIN</text>
+<rect x="350" y="350" width="250" height="170" rx="14" fill="#172554" stroke="#22d3ee" stroke-width="2"/><text x="475" y="400" text-anchor="middle" fill="#cffafe" font-size="23" font-weight="700">Zeek</text><text x="475" y="432" text-anchor="middle" fill="#a5f3fc" font-size="15">Network security monitoring</text><text x="475" y="462" text-anchor="middle" fill="#a5f3fc" font-size="15">JSON conn / DNS / HTTP / SSL</text><text x="475" y="490" text-anchor="middle" fill="#67e8f9" font-size="14">Passive visibility</text>
+<rect x="700" y="180" width="220" height="110" rx="14" fill="#052e2b" stroke="#34d399" stroke-width="2"/><text x="810" y="225" text-anchor="middle" fill="#d1fae5" font-size="21" font-weight="700">Network Logs</text><text x="810" y="253" text-anchor="middle" fill="#86efac" font-size="15">Mounted under network-sensors/</text>
+<rect x="700" y="350" width="220" height="110" rx="14" fill="#052e2b" stroke="#34d399" stroke-width="2"/><text x="810" y="395" text-anchor="middle" fill="#d1fae5" font-size="21" font-weight="700">SOC Pipeline</text><text x="810" y="423" text-anchor="middle" fill="#86efac" font-size="15">Enrichment → AI → case</text>
+<path d="M290 215H350" stroke="#93c5fd" stroke-width="4"/><path d="M600 215H700" stroke="#86efac" stroke-width="4"/><path d="M600 435H700" stroke="#86efac" stroke-width="4"/><path d="M180 270V435H350" fill="none" stroke="#67e8f9" stroke-width="4"/>
+<polygon points="350,215 338,208 338,222" fill="#93c5fd"/><polygon points="700,215 688,208 688,222" fill="#86efac"/><polygon points="700,435 688,428 688,442" fill="#86efac"/>
+</g>
+<text x="60" y="575" fill="#64748b" font-family="Arial,sans-serif" font-size="13">Deployment diagram — capability architecture, not proof of a currently running sensor host.</text>
+</svg>
