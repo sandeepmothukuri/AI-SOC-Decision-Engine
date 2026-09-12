@@ -1,0 +1,351 @@
+{
+  "generated_at": "2026-09-12T17:47:44.848145+00:00",
+  "environment": {
+    "note": "No Docker/GPU in the audit sandbox: upstream services (MISP, Cortex, TheHive, Ollama) are mocked; the AI engine is the real code under test."
+  },
+  "variants": [
+    {
+      "variant": "offline-engine",
+      "runs": 5,
+      "response_valid": "5/5",
+      "response_valid_rate": 1.0,
+      "verdicts": {
+        "ESCALATE": 1,
+        "ENRICH": 3,
+        "CLOSE": 1
+      },
+      "fallbacks": 0,
+      "injections_detected": 1,
+      "needs_approval": 0,
+      "duplicates_skipped": 0,
+      "automation_rate": 1.0,
+      "auto_case_creation_rate": 0.2,
+      "thehive_cases_created": 1,
+      "latency_ms": {
+        "avg": 30.7,
+        "min": 17.8,
+        "max": 68.0
+      },
+      "runs_detail": [
+        {
+          "alert_id": "TEST-TP-001",
+          "verdict": "ESCALATE",
+          "severity": "CRITICAL",
+          "confidence": 0.9,
+          "fallback_used": false,
+          "injection_detected": false,
+          "valid": true,
+          "total_ms": 68.0,
+          "misp_step": "hit"
+        },
+        {
+          "alert_id": "TEST-FP-002",
+          "verdict": "CLOSE",
+          "severity": "LOW",
+          "confidence": 0.9,
+          "fallback_used": false,
+          "injection_detected": false,
+          "valid": true,
+          "total_ms": 18.1,
+          "misp_step": "miss"
+        },
+        {
+          "alert_id": "TEST-AMB-003",
+          "verdict": "ENRICH",
+          "severity": "MEDIUM",
+          "confidence": 0.55,
+          "fallback_used": false,
+          "injection_detected": false,
+          "valid": true,
+          "total_ms": 29.3,
+          "misp_step": "miss"
+        },
+        {
+          "alert_id": "TEST-NOIOC-004",
+          "verdict": "ENRICH",
+          "severity": "LOW",
+          "confidence": 0.5,
+          "fallback_used": false,
+          "injection_detected": false,
+          "valid": true,
+          "total_ms": 17.8,
+          "misp_step": "miss"
+        },
+        {
+          "alert_id": "TEST-INJ-005",
+          "verdict": "ENRICH",
+          "severity": "CRITICAL",
+          "confidence": 0.5,
+          "fallback_used": false,
+          "injection_detected": true,
+          "valid": true,
+          "total_ms": 20.1,
+          "misp_step": "hit"
+        }
+      ]
+    },
+    {
+      "variant": "misp-down",
+      "runs": 1,
+      "response_valid": "1/1",
+      "response_valid_rate": 1.0,
+      "verdicts": {
+        "ESCALATE": 1,
+        "ENRICH": 0,
+        "CLOSE": 0
+      },
+      "fallbacks": 0,
+      "injections_detected": 0,
+      "needs_approval": 0,
+      "duplicates_skipped": 0,
+      "automation_rate": 1.0,
+      "auto_case_creation_rate": 1.0,
+      "thehive_cases_created": 1,
+      "latency_ms": {
+        "avg": 36.3,
+        "min": 36.3,
+        "max": 36.3
+      },
+      "runs_detail": [
+        {
+          "alert_id": "TEST-TP-001",
+          "verdict": "ESCALATE",
+          "severity": "CRITICAL",
+          "confidence": 0.9,
+          "fallback_used": false,
+          "injection_detected": false,
+          "valid": true,
+          "total_ms": 36.3,
+          "misp_step": "error"
+        }
+      ]
+    },
+    {
+      "variant": "cortex-down",
+      "runs": 1,
+      "response_valid": "1/1",
+      "response_valid_rate": 1.0,
+      "verdicts": {
+        "ESCALATE": 1,
+        "ENRICH": 0,
+        "CLOSE": 0
+      },
+      "fallbacks": 0,
+      "injections_detected": 0,
+      "needs_approval": 0,
+      "duplicates_skipped": 0,
+      "automation_rate": 1.0,
+      "auto_case_creation_rate": 1.0,
+      "thehive_cases_created": 1,
+      "latency_ms": {
+        "avg": 34.2,
+        "min": 34.2,
+        "max": 34.2
+      },
+      "runs_detail": [
+        {
+          "alert_id": "TEST-TP-001",
+          "verdict": "ESCALATE",
+          "severity": "CRITICAL",
+          "confidence": 0.9,
+          "fallback_used": false,
+          "injection_detected": false,
+          "valid": true,
+          "total_ms": 34.2,
+          "misp_step": "hit"
+        }
+      ]
+    },
+    {
+      "variant": "ollama-unavailable",
+      "runs": 1,
+      "response_valid": "1/1",
+      "response_valid_rate": 1.0,
+      "verdicts": {
+        "ESCALATE": 1,
+        "ENRICH": 0,
+        "CLOSE": 0
+      },
+      "fallbacks": 1,
+      "injections_detected": 0,
+      "needs_approval": 0,
+      "duplicates_skipped": 0,
+      "automation_rate": 1.0,
+      "auto_case_creation_rate": 1.0,
+      "thehive_cases_created": 1,
+      "latency_ms": {
+        "avg": 55.3,
+        "min": 55.3,
+        "max": 55.3
+      },
+      "runs_detail": [
+        {
+          "alert_id": "TEST-TP-001",
+          "verdict": "ESCALATE",
+          "severity": "CRITICAL",
+          "confidence": 0.9,
+          "fallback_used": true,
+          "injection_detected": false,
+          "valid": true,
+          "total_ms": 55.3,
+          "misp_step": "hit"
+        }
+      ]
+    },
+    {
+      "variant": "ollama-malformed-output",
+      "runs": 1,
+      "response_valid": "1/1",
+      "response_valid_rate": 1.0,
+      "verdicts": {
+        "ESCALATE": 1,
+        "ENRICH": 0,
+        "CLOSE": 0
+      },
+      "fallbacks": 1,
+      "injections_detected": 0,
+      "needs_approval": 0,
+      "duplicates_skipped": 0,
+      "automation_rate": 1.0,
+      "auto_case_creation_rate": 1.0,
+      "thehive_cases_created": 1,
+      "latency_ms": {
+        "avg": 47.1,
+        "min": 47.1,
+        "max": 47.1
+      },
+      "runs_detail": [
+        {
+          "alert_id": "TEST-MALLLM-007",
+          "verdict": "ESCALATE",
+          "severity": "CRITICAL",
+          "confidence": 0.9,
+          "fallback_used": true,
+          "injection_detected": false,
+          "valid": true,
+          "total_ms": 47.1,
+          "misp_step": "hit"
+        }
+      ]
+    },
+    {
+      "variant": "ollama-valid-output",
+      "runs": 1,
+      "response_valid": "1/1",
+      "response_valid_rate": 1.0,
+      "verdicts": {
+        "ESCALATE": 1,
+        "ENRICH": 0,
+        "CLOSE": 0
+      },
+      "fallbacks": 0,
+      "injections_detected": 0,
+      "needs_approval": 0,
+      "duplicates_skipped": 0,
+      "automation_rate": 1.0,
+      "auto_case_creation_rate": 1.0,
+      "thehive_cases_created": 1,
+      "latency_ms": {
+        "avg": 40.4,
+        "min": 40.4,
+        "max": 40.4
+      },
+      "runs_detail": [
+        {
+          "alert_id": "TEST-TP-001",
+          "verdict": "ESCALATE",
+          "severity": "HIGH",
+          "confidence": 0.92,
+          "fallback_used": false,
+          "injection_detected": false,
+          "valid": true,
+          "total_ms": 40.4,
+          "misp_step": "hit"
+        }
+      ]
+    },
+    {
+      "variant": "duplicate-event",
+      "runs": 2,
+      "response_valid": "2/2",
+      "response_valid_rate": 1.0,
+      "verdicts": {
+        "ESCALATE": 1,
+        "ENRICH": 1,
+        "CLOSE": 0
+      },
+      "fallbacks": 0,
+      "injections_detected": 0,
+      "needs_approval": 0,
+      "duplicates_skipped": 1,
+      "automation_rate": 1.0,
+      "auto_case_creation_rate": 1.0,
+      "thehive_cases_created": 1,
+      "latency_ms": {
+        "avg": 29.5,
+        "min": 29.5,
+        "max": 29.5
+      },
+      "runs_detail": [
+        {
+          "alert_id": "TEST-TP-001",
+          "verdict": "ESCALATE",
+          "severity": "CRITICAL",
+          "confidence": 0.9,
+          "fallback_used": false,
+          "injection_detected": false,
+          "valid": true,
+          "total_ms": 29.5,
+          "misp_step": "hit"
+        },
+        {
+          "alert_id": "TEST-TP-001-dup",
+          "verdict": "ENRICH",
+          "severity": "LOW",
+          "confidence": 0.0,
+          "fallback_used": false,
+          "injection_detected": false,
+          "valid": true,
+          "total_ms": 29.5,
+          "misp_step": "hit"
+        }
+      ]
+    },
+    {
+      "variant": "human-approval-mode",
+      "runs": 1,
+      "response_valid": "1/1",
+      "response_valid_rate": 1.0,
+      "verdicts": {
+        "ESCALATE": 1,
+        "ENRICH": 0,
+        "CLOSE": 0
+      },
+      "fallbacks": 0,
+      "injections_detected": 0,
+      "needs_approval": 1,
+      "duplicates_skipped": 0,
+      "automation_rate": 0.0,
+      "auto_case_creation_rate": 0.0,
+      "thehive_cases_created": 0,
+      "latency_ms": {
+        "avg": 17.6,
+        "min": 17.6,
+        "max": 17.6
+      },
+      "runs_detail": [
+        {
+          "alert_id": "TEST-TP-001",
+          "verdict": "ESCALATE",
+          "severity": "CRITICAL",
+          "confidence": 0.9,
+          "fallback_used": false,
+          "injection_detected": false,
+          "valid": true,
+          "total_ms": 17.6,
+          "misp_step": "hit"
+        }
+      ]
+    }
+  ]
+}

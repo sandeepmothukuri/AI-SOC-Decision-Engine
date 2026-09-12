@@ -1,0 +1,5 @@
+# Known-benign scanners / internal tooling for the deterministic safety layer.
+nessus
+qualys
+internal scan
+maintenance window

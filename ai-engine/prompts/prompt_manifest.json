@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-12",
+  "versions": {
+    "v1": {
+      "nl_to_dsl.txt": "3eef59d0459d34964b809f0e5b5e8362cd253e78db0038631c89bc1842d6f6cf",
+      "playbook.txt": "376d21f3370499cb31db66ce1d84dbd9d405746509d88c3283cb59457a19b155",
+      "summary.txt": "ace8b62cdf7cf7ee54901fc0725cc54a74da2c4e0914dc9bb011efddcf48c1ed",
+      "triage.txt": "a3b6e622e6601376e146eee6865d565840b9b31a763b65389bf3b58045dd349b"
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "alert_id": "TEST-TP-001",
+  "verdict": "ESCALATE",
+  "severity": "CRITICAL",
+  "confidence": 0.9,
+  "summary": "ESCALATE decision for alert from wazuh ('SSH brute force attack: multiple failures followed by success') observed from 185.220.101.45.",
+  "rationale": "Deterministic rule assessment: blocklist match: 185.220.101.45; malicious markers: brute force followed by success, MISP threat_level=high; Wazuh severity level 12.",
+  "mitre_techniques": [
+    "T1110 - Brute Force"
+  ],
+  "recommended_action": "Investigate immediately: verify the source in threat intel, contain the affected host, and preserve logs. Block source if confirmed malicious.",
+  "evidence": [
+    "source_ip 185.220.101.45 is on the blocklist",
+    "raw_log matches: brute force followed by success",
+    "MISP context present"
+  ],
+  "is_false_positive": false,
+  "needs_approval": false,
+  "decision_id": null,
+  "fallback_used": false,
+  "injection_detected": false,
+  "model": "llama3",
+  "prompt_version": "v1",
+  "processing_time_ms": 1,
+  "timestamp": "2026-09-12T17:48:34.013525+00:00"
+}

@@ -1,0 +1,48 @@
+
+==============================================================================
+ AI-SOC LAB SMOKE TEST — measured results (mocked upstreams; real engine)
+==============================================================================
+
+[offline-engine]  runs=5  valid=5/5
+   verdicts: {'ESCALATE': 1, 'ENRICH': 3, 'CLOSE': 1}  fallbacks=0 injections=1 needs_approval=0 dupes=0
+   automation_rate=1.0  auto_case_creation_rate=0.2  thehive_cases=1
+   latency avg=30.7ms min=17.8ms max=68.0ms
+
+[misp-down]  runs=1  valid=1/1
+   verdicts: {'ESCALATE': 1, 'ENRICH': 0, 'CLOSE': 0}  fallbacks=0 injections=0 needs_approval=0 dupes=0
+   automation_rate=1.0  auto_case_creation_rate=1.0  thehive_cases=1
+   latency avg=36.3ms min=36.3ms max=36.3ms
+
+[cortex-down]  runs=1  valid=1/1
+   verdicts: {'ESCALATE': 1, 'ENRICH': 0, 'CLOSE': 0}  fallbacks=0 injections=0 needs_approval=0 dupes=0
+   automation_rate=1.0  auto_case_creation_rate=1.0  thehive_cases=1
+   latency avg=34.2ms min=34.2ms max=34.2ms
+
+[ollama-unavailable]  runs=1  valid=1/1
+   verdicts: {'ESCALATE': 1, 'ENRICH': 0, 'CLOSE': 0}  fallbacks=1 injections=0 needs_approval=0 dupes=0
+   automation_rate=1.0  auto_case_creation_rate=1.0  thehive_cases=1
+   latency avg=55.3ms min=55.3ms max=55.3ms
+
+[ollama-malformed-output]  runs=1  valid=1/1
+   verdicts: {'ESCALATE': 1, 'ENRICH': 0, 'CLOSE': 0}  fallbacks=1 injections=0 needs_approval=0 dupes=0
+   automation_rate=1.0  auto_case_creation_rate=1.0  thehive_cases=1
+   latency avg=47.1ms min=47.1ms max=47.1ms
+
+[ollama-valid-output]  runs=1  valid=1/1
+   verdicts: {'ESCALATE': 1, 'ENRICH': 0, 'CLOSE': 0}  fallbacks=0 injections=0 needs_approval=0 dupes=0
+   automation_rate=1.0  auto_case_creation_rate=1.0  thehive_cases=1
+   latency avg=40.4ms min=40.4ms max=40.4ms
+
+[duplicate-event]  runs=2  valid=2/2
+   verdicts: {'ESCALATE': 1, 'ENRICH': 1, 'CLOSE': 0}  fallbacks=0 injections=0 needs_approval=0 dupes=1
+   automation_rate=1.0  auto_case_creation_rate=1.0  thehive_cases=1
+   latency avg=29.5ms min=29.5ms max=29.5ms
+
+[human-approval-mode]  runs=1  valid=1/1
+   verdicts: {'ESCALATE': 1, 'ENRICH': 0, 'CLOSE': 0}  fallbacks=0 injections=0 needs_approval=1 dupes=0
+   automation_rate=0.0  auto_case_creation_rate=0.0  thehive_cases=0
+   latency avg=17.6ms min=17.6ms max=17.6ms
+
+==============================================================================
+
+Report written to /home/user/repo/docs/validation-results

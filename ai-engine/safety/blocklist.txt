@@ -1,0 +1,13 @@
+# Known-malicious indicators used by the deterministic safety layer.
+# One entry per line. Format: value [comment]
+# IPs / networks
+185.220.101.45   # Tor exit node (used in repo test fixture)
+45.227.255.0/24  # example range
+# User-agents / tool markers
+sqlmap
+mimikatz
+# File extension markers (ransomware)
+.encrypted
+.locked
+.ransom
+.crypt
