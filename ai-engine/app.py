@@ -1,15 +1,8 @@
-"""
-AI SOC Engine — FastAPI server (hardened).
+"""AI SOC Engine — FastAPI server (hardened).
 
-Endpoints:
-  GET  /health                     liveness + model + prompt version
-  POST /analyze                    triage an alert (strict structured output)
-  POST /approve/{decision_id}      approve a held decision (creates TheHive case)
-  POST /reject/{decision_id}       reject a held decision
-  POST /playbook                   generate an IR playbook
-  POST /query                      natural-language -> Elasticsearch DSL
-  GET  /stats                      metrics
-  GET  /config                     resolved (redacted) configuration
+The API normalises alerts from Wazuh, Suricata and Zeek, optionally enriches
+observables with Cortex, performs deterministic/LLM-assisted triage, and
+creates analyst-reviewable TheHive cases.
 """
 
 from __future__ import annotations
@@ -27,6 +20,7 @@ from pydantic import BaseModel
 
 from analyzer import AlertAnalyzer
 from config import Config
+from cortex_client import CortexClient
 from schemas import AlertPayload, TriageResult
 from thehive_client import TheHiveClient
 
@@ -43,20 +37,30 @@ def create_app(config: Optional[Config] = None) -> FastAPI:
     hive_client = TheHiveClient(
         config.thehive_url, config.thehive_api_key, config.thehive_timeout_seconds
     )
+    cortex_client = CortexClient(
+        config.cortex_url,
+        config.cortex_api_key,
+        config.cortex_analyzer_id,
+        config.cortex_observable_type,
+        config.cortex_tlp,
+        config.cortex_timeout_seconds,
+        config.cortex_enabled,
+    )
 
     app = FastAPI(
         title="AI SOC Engine",
-        description="LLM-powered alert triage (decision support) for open-source SOC",
-        version="2.0.0",
+        description="LLM-powered alert triage and observable enrichment for an open-source SOC",
+        version="2.1.0",
     )
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type", "Authorization"],
     )
     app.state.analyzer = analyzer
     app.state.hive_client = hive_client
+    app.state.cortex_client = cortex_client
 
     @app.middleware("http")
     async def request_context(request: Request, call_next):
@@ -90,15 +94,21 @@ def create_app(config: Optional[Config] = None) -> FastAPI:
             "backend": config.backend,
             "prompt_version": config.prompt_version,
             "human_approval": config.human_approval_enabled,
+            "cortex_enrichment": config.cortex_enabled,
         }
 
     @app.post("/analyze", response_model=TriageResult)
     async def analyze_alert(alert: AlertPayload):
         payload = alert.model_dump()
+
+        cortex_context = await cortex_client.enrich(payload)
+        if cortex_context is not None:
+            payload["cortex_context"] = cortex_context
+
         result = await analyzer.analyze(payload)
 
-        # Automation: auto-create a TheHive case only for decisions that do not
-        # require human approval and are not duplicates/benign closes.
+        # Automation: create a TheHive case only for decisions that do not
+        # require human approval and are not benign/duplicate closes.
         if result.verdict == "ESCALATE" and not result.needs_approval:
             await hive_client.create_case(payload, result.model_dump())
 

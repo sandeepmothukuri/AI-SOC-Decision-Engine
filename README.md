@@ -1,222 +1,162 @@
 # 🧠 AI SOC Decision Engine
 
-An open-source Security Operations Center (SOC) decision-support engine with a **local AI analysis layer** for alert triage. Built for blue-team engineering, AI-assisted SOC research, detection workflows, and reproducible security validation.
+An open-source SOC decision-support engine for **AI-assisted alert triage, enrichment, safety controls, human approval and incident escalation**. The repository is designed as the decision/control-plane layer of a practical blue-team stack.
 
-> **Status (audited 2026-09-12).** The AI engine is real, hardened, and tested (42 unit/integration tests + a reproducible end-to-end smoke test). The surrounding SOC services (Wazuh, Shuffle, MISP, TheHive, Cortex, Ollama) are provided as Docker Compose files but were **not booted during the audit** and are labelled accordingly. See [docs/audit-report.md](docs/audit-report.md) and [docs/validation.md](docs/validation.md) for exactly what was and wasn't verified.
+> **Engineering principle:** AI augments analyst judgement; it does not replace analyst accountability.
 
----
+## Architecture
 
-## ⚠️ What this project is (and is not)
+```text
+                    Security Telemetry
+                           │
+             ┌─────────────┴─────────────┐
+             │                           │
+        Wazuh SIEM/EDR          Suricata IDS/IPS
+             │                           │
+             └─────────────┬─────────────┘
+                           │
+                      Zeek Network
+                       Visibility
+                           │
+                           ▼
+                    Shuffle SOAR
+                           │
+              ┌────────────┴────────────┐
+              │                         │
+         MISP CTI                 Cortex Analysis
+              │                         │
+              └────────────┬────────────┘
+                           ▼
+                AI SOC Decision Engine
+              ┌────────────┼────────────┐
+              │            │            │
+          Safety       Ollama/LLM   Schema/Thresholds
+              │            │            │
+              └────────────┴────────────┘
+                           │
+                           ▼
+                      TheHive 5
+                           │
+                           ▼
+                     SOC Analyst
+                  Approve / Reject / IR
+```
 
-- **It is** an *augmentation / decision-support* tool: the AI proposes a structured triage containing summary, severity, confidence, rationale, MITRE mapping, recommended action, and evidence; an analyst remains accountable for the final decision.
-- **It is not** a replacement for L1 analysts. No evaluation against a labelled alert corpus has been performed here, so no stronger accuracy claim is made. Human approval gates ESCALATE/CLOSE decisions by default.
+## Component matrix
 
----
+| Component | Role | Repository status |
+|---|---|---|
+| **Wazuh** | SIEM / EDR / log aggregation | ✅ Compose deployment |
+| **Suricata** | Network IDS/IPS | ✅ Container deployment + EVE JSON logging |
+| **Zeek** | Network traffic analysis | ✅ Container deployment + JSON network logs |
+| **Shuffle** | SOAR / workflow automation | ✅ Compose deployment + workflow definitions |
+| **MISP** | Threat intelligence enrichment | ✅ Compose deployment + enrichment workflow |
+| **Cortex** | Observable analysis / enrichment | ✅ Compose deployment + REST enrichment client |
+| **Ollama** | Local LLM inference | ✅ Integration code + Compose |
+| **TheHive 5** | Case management | ✅ API client implemented |
+| **AI SOC Decision Engine** | AI-assisted triage and decision support | ✅ Implemented + tested |
 
-## 📐 Architecture
+### Deployment truth
 
-The following diagram shows the implemented decision flow and its integration boundaries.
+The repository now contains executable deployment definitions for the complete SOC stack. **Green status means the capability is implemented in the repository and has a deployment path; it does not claim that the services are currently running on the maintainer's host.** Live runtime evidence is recorded separately when a lab execution is performed.
+
+## Decision pipeline
+
+1. Receive a normalized alert from Wazuh, Suricata, Zeek or an automation layer.
+2. Optionally enrich the alert IOC with Cortex.
+3. Apply deterministic safety checks and prompt-injection controls.
+4. Run the local Ollama backend or the deterministic offline backend.
+5. Validate the model response against strict Pydantic schemas.
+6. Apply confidence thresholds and deterministic overrides.
+7. Hold high-impact decisions for analyst approval when configured.
+8. Create a TheHive 5 case for approved/high-confidence escalation.
+9. Record structured decision and enrichment metrics.
+
+## Network sensors
+
+### Suricata
+
+`docker/docker-compose.network-sensors.yml` runs Suricata against the host interface selected by `SOC_SENSOR_INTERFACE`. The container uses `NET_ADMIN`, `NET_RAW` and `SYS_NICE`, writes EVE JSON to `network-sensors/suricata/logs/`, and retains the Suricata rule/runtime volume.
+
+### Zeek
+
+Zeek runs on the same selected host interface and writes JSON-formatted `conn.log`, `dns.log`, `http.log`, `ssl.log`, `files.log` and `weird.log` under `network-sensors/zeek/logs/`.
+
+Set the interface before deployment:
+
+```bash
+export SOC_SENSOR_INTERFACE=eth0
+./scripts/deploy.sh
+```
+
+Use the actual interface carrying the traffic you are authorized to monitor. Passive IDS/NSM monitoring is the default; this repository does not claim inline blocking simply because Suricata is present.
+
+## Cortex enrichment
+
+Cortex is deployed with TheHive and can be enabled for observable enrichment:
+
+```bash
+export CORTEX_ENABLED=true
+export CORTEX_API_KEY='<cortex-api-key>'
+export CORTEX_ANALYZER_ID='<enabled-ip-analyzer-id>'
+```
+
+The engine sends the first available `source_ip`/`dest_ip` as an `ip` observable to `/api/analyzer/{ANALYZER_ID}/run`. The Cortex analyzer must already be enabled and permitted for the configured organization.
+
+## Shuffle and MISP
+
+The repository contains the SOAR deployment and versioned workflow definitions under `shuffle-workflows/`. The workflows describe the alert → enrichment → AI decision → case-management path without pretending that a Git-tracked JSON file is proof of a live Shuffle instance.
+
+MISP is deployed through `docker/docker-compose.misp.yml`; its enrichment contract is represented in the workflow layer and can be supplied to the AI engine as `misp_context`.
+
+## Actual tested functionality
+
+- Strict structured AI output validation.
+- Deterministic safety controls and prompt-injection detection.
+- Prompt versioning with SHA-256 manifest verification.
+- Ollama integration with timeout/retry handling.
+- Deterministic offline fallback.
+- Confidence-threshold enforcement.
+- Human-approval gating.
+- Duplicate-event deduplication.
+- TheHive 5 case creation.
+- Structured decision metrics.
+- Reproducible smoke test and automated test suite.
+- Suricata and Zeek container deployment definitions.
+- Cortex REST enrichment integration with fail-soft behaviour.
+
+## Visual evidence
+
+### Architecture
 
 <p align="center">
   <img src="docs/diagrams/architecture.svg" alt="AI SOC Decision Engine architecture" width="100%">
 </p>
 
-### Decision flow
-
-```text
-Wazuh / SOC Alert
-        ↓
-Shuffle workflow
-        ↓
-MISP enrichment
-        ↓
-AI SOC Decision Engine
-  ├─ deterministic safety
-  ├─ optional Ollama LLM
-  ├─ strict schema validation
-  ├─ confidence thresholds
-  ├─ fallback handling
-  └─ human-approval gate
-        ↓
-TheHive 5 case
-        ↓
-Analyst approve / reject
-```
-
-> **Integration boundary:** Suricata and Zeek are not deployed in this repository; Cortex is not yet wired into the active workflow; Shuffle JSON files are reference specifications rather than native-importable workflow exports.
-
----
-
-## 🛠️ Stack
-
-| Component | Role | Repository status |
-|-----------|------|-------------------|
-| **Wazuh** | SIEM / EDR / log aggregation | ✅ Compose configuration |
-| **Suricata** | Network IDS/IPS | ❌ Not deployed |
-| **Zeek** | Network traffic analysis | ❌ Not deployed |
-| **Shuffle** | SOAR / workflow automation | ⚠️ Reference workflow configuration |
-| **MISP** | Threat intelligence enrichment | ✅ Workflow step defined |
-| **Cortex** | Analyzer / enrichment layer | ⚠️ Compose only; not wired |
-| **Ollama** | Local LLM inference | ✅ Integration code + Compose |
-| **TheHive 5** | Case management | ✅ API client implemented |
-| **AI SOC Decision Engine** | AI-assisted triage and decision support | ✅ Implemented + tested |
-
----
-
-## 🖼️ Visual Evidence
-
-This section provides a complete visual walkthrough of the repository's available architecture, implementation evidence, validation output, and retained vendor-reference screenshots.
-
-### 1. End-to-end architecture
-
-The primary architecture diagram shows how a SOC alert moves through enrichment, deterministic safety controls, local AI analysis, validation, and human approval.
-
-<p align="center">
-  <img src="docs/diagrams/architecture.svg" alt="End-to-end AI SOC Decision Engine architecture" width="100%">
-</p>
-
----
-
-### 2. Real project evidence — AI triage
-
-Captured from a real `POST /analyze` response produced by the repository's AI engine.
+### AI triage output
 
 <p align="center">
   <img src="docs/screenshots/ai-engine-triage-output.png" alt="AI SOC Decision Engine triage output" width="90%">
 </p>
 
----
-
-### 3. Real project evidence — smoke test
-
-Captured console output from the reproducible end-to-end smoke-test harness.
+### Smoke test
 
 <p align="center">
   <img src="docs/screenshots/smoke-test-output.png" alt="AI SOC Decision Engine smoke test output" width="90%">
 </p>
 
----
+Vendor screenshots are retained separately as reference material and are not represented as live project evidence.
 
-## 🧩 SOC Platform Reference Screenshots
+## Quick start
 
-The following screenshots are retained under `docs/screenshots/vendor-originals/` as **vendor/reference visuals** for the technologies represented in the architecture. They are intentionally separated from project-generated evidence and must not be interpreted as proof that those vendor services were live during the audit.
-
-### Wazuh
-
-<p align="center">
-  <img src="docs/screenshots/vendor-originals/wazuh-dashboard.png" alt="Wazuh dashboard reference" width="90%">
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/vendor-originals/wazuh-endpoint-security.png" alt="Wazuh endpoint security reference" width="90%">
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/vendor-originals/wazuh-threat-intel.png" alt="Wazuh threat intelligence reference" width="90%">
-</p>
-
-### TheHive + Cortex
-
-<p align="center">
-  <img src="docs/screenshots/vendor-originals/thehive-alert-management.png" alt="TheHive alert management reference" width="90%">
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/vendor-originals/thehive-case-management.png" alt="TheHive case management reference" width="90%">
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/vendor-originals/thehive-cortex-response.png" alt="TheHive and Cortex response reference" width="90%">
-</p>
-
-### Shuffle SOAR
-
-<p align="center">
-  <img src="docs/screenshots/vendor-originals/shuffle-workflow.png" alt="Shuffle SOAR workflow reference" width="90%">
-</p>
-
-### MISP Threat Intelligence
-
-<p align="center">
-  <img src="docs/screenshots/vendor-originals/misp-dashboard.png" alt="MISP dashboard reference" width="90%">
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/vendor-originals/misp-trendings.png" alt="MISP trending threat intelligence reference" width="90%">
-</p>
-
-### Ollama / Open WebUI
-
-<p align="center">
-  <img src="docs/screenshots/vendor-originals/ollama-openwebui.png" alt="Ollama Open WebUI reference" width="90%">
-</p>
-
-> **Reference-image policy:** these vendor-original screenshots are preserved for documentation and provenance only. Project-generated evidence is presented separately above.
-
-See [docs/screenshots/README.md](docs/screenshots/README.md) for screenshot provenance.
-
----
-
-## 🧪 Validation Evidence
-
-Validation artifacts are stored in [`docs/validation-results/`](docs/validation-results/), including the latest JSON results, timestamped smoke-test results, Markdown reporting, and captured console output.
-
-| Artifact | Purpose |
-|---|---|
-| [latest.json](docs/validation-results/latest.json) | Latest machine-readable validation results |
-| [example-triage-response.json](docs/validation-results/example-triage-response.json) | Example structured triage response |
-| [smoke-test-20260912T174744Z.md](docs/validation-results/smoke-test-20260912T174744Z.md) | Timestamped smoke-test report |
-| [smoke-test-console.txt](docs/validation-results/smoke-test-console.txt) | Captured smoke-test console output |
-
----
-
-## ✅ Actual tested functionality
-
-- Strict structured AI output with schema validation.
-- Deterministic safety controls, including prompt-injection detection and IOC handling.
-- Prompt versioning with SHA-256 manifest verification.
-- Ollama integration with timeout/retry handling.
-- Deterministic fallback when the LLM is unavailable or returns malformed output.
-- Confidence-threshold enforcement.
-- Human-approval workflow for high-impact decisions.
-- Duplicate-event deduplication.
-- TheHive 5 case creation through `/api/v1/case`.
-- Structured decision logging and `/stats` metrics.
-- Reproducible end-to-end smoke testing plus a 42-test suite.
-
----
-
-## 🧪 Integration status
-
-| Capability | Status | Evidence |
-|---|---|---|
-| AI decision engine | ✅ Implemented | Unit/integration tests + smoke test |
-| Local LLM path | ✅ Implemented | Ollama backend code |
-| Offline deterministic path | ✅ Implemented | Validation harness |
-| TheHive 5 integration | ✅ Implemented | `/api/v1/case` client |
-| Wazuh deployment | ⚠️ Configuration present | Docker Compose |
-| MISP workflow enrichment | ⚠️ Configuration present | Shuffle reference workflow |
-| Cortex enrichment | ❌ Not wired | Future integration |
-| Suricata ingestion | ❌ Not present | Future integration |
-| Zeek ingestion | ❌ Not present | Future integration |
-| Native Shuffle export | ❌ Not present | Reference JSON only |
-
----
-
-## 🚀 Quick Start
-
-### A. Run the tested AI engine path
+### AI engine only
 
 ```bash
 cd ai-engine
-python3 -m venv .venv && source .venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-
-# deterministic offline backend
 AI_SOC_BACKEND=offline python app.py
-
-# or local Ollama backend
-AI_SOC_BACKEND=ollama OLLAMA_HOST=http://localhost:11434 python app.py
 ```
 
 Then:
@@ -226,90 +166,55 @@ curl -s http://localhost:8888/health
 python3 ../scripts/send-test-alert.py ssh-bruteforce
 ```
 
-### B. Run validation
+### Full lab deployment
+
+```bash
+chmod +x scripts/*.sh
+export SOC_SENSOR_INTERFACE=eth0
+./scripts/deploy.sh
+./scripts/setup-ollama.sh
+```
+
+The deployment script starts Wazuh, Suricata, Zeek, TheHive, Cortex, Shuffle, MISP, Ollama and the AI engine. Replace all default credentials and configure API keys before exposing any service outside an isolated lab.
+
+## Validation
 
 ```bash
 python3 -m pytest tests/ -q
 python3 scripts/smoke_test.py
 ```
 
-### C. Deploy the optional SOC stack
+CI validates Python quality, Docker Compose syntax, configuration files, the test suite and the smoke-test path.
 
-```bash
-chmod +x scripts/*.sh
-./scripts/deploy.sh
-./scripts/setup-ollama.sh
-```
-
-> The full Docker stack was not booted during the audit environment, so deployment components remain explicitly marked as unverified until exercised in a live environment.
-
----
-
-## 📁 Project Structure
-
-```text
-├── docker/                  # SOC service Compose files
-├── ai-engine/               # FastAPI AI decision engine
-│   ├── app.py               # API endpoints
-│   ├── analyzer.py          # analysis pipeline
-│   ├── safety.py            # deterministic safety controls
-│   ├── llm_backends.py      # Ollama / offline / scripted backends
-│   ├── schemas.py           # strict Pydantic schemas
-│   ├── thehive_client.py    # TheHive 5 API client
-│   ├── config.py            # resolved configuration
-│   ├── prompts/v1/          # versioned prompts
-│   ├── safety/              # allow/block lists
-│   └── legacy/              # pre-audit implementation preserved for provenance
-├── shuffle-workflows/       # reference workflow specifications
-├── wazuh-config/            # Wazuh custom rules
-├── thehive-config/          # TheHive configuration/templates
-├── scripts/                 # deployment and validation utilities
-├── tests/                   # unit/integration tests
-└── docs/                    # architecture, validation, safety, testing and evidence
-```
-
----
-
-## 📚 Documentation
+## Documentation
 
 | Document | Purpose |
 |---|---|
-| [docs/audit-report.md](docs/audit-report.md) | File-by-file audit and implementation reality |
-| [docs/validation.md](docs/validation.md) | Reproducible validation results |
-| [docs/ai-safety-model.md](docs/ai-safety-model.md) | Safety controls, thresholds and approval model |
+| [docs/audit-report.md](docs/audit-report.md) | File-by-file implementation audit |
+| [docs/validation.md](docs/validation.md) | Validation methodology and results |
+| [docs/ai-safety-model.md](docs/ai-safety-model.md) | Safety controls and approval model |
 | [docs/testing.md](docs/testing.md) | Test strategy and scenario matrix |
-| [docs/observability.md](docs/observability.md) | Metrics, logging and operational visibility |
+| [docs/observability.md](docs/observability.md) | Metrics and operational visibility |
 | [docs/setup-guide.md](docs/setup-guide.md) | Deployment and setup guidance |
 | [docs/mitre-mapping.md](docs/mitre-mapping.md) | MITRE ATT&CK mapping |
-| [docs/screenshots/README.md](docs/screenshots/README.md) | Screenshot provenance and evidence policy |
+| [docs/screenshots/README.md](docs/screenshots/README.md) | Screenshot provenance |
 
----
+## Security model
 
-## 🔐 Security Model
+- Local Ollama inference keeps alert content on controlled infrastructure.
+- AI output remains advisory.
+- High-impact decisions can require explicit analyst approval.
+- Malformed model output is rejected rather than trusted.
+- Deterministic fallback prevents total dependence on LLM availability.
+- Cortex is optional and fail-soft; unavailable enrichment does not stop alert triage.
+- Network sensors are passive by default.
+- Default credentials and API keys must never be used outside an isolated lab.
 
-- Local Ollama inference is supported to keep alert data on controlled infrastructure.
-- AI output is advisory; analyst approval remains the control point for high-impact decisions.
-- Structured validation rejects malformed model output.
-- Deterministic fallback prevents dependence on LLM availability.
-- Default credentials in Compose files **must** be replaced before any real deployment.
+## License
 
----
+MIT — free to use, modify and share.
 
-## 📊 Validation Highlights
-
-The current validation harness measures decision outcomes, fallback behaviour, prompt-injection handling, duplicate-event handling, and human-approval behaviour. The documented results are generated from the test harness rather than asserted manually.
-
-See [docs/validation.md](docs/validation.md) for the recorded scenario-level results and methodology.
-
----
-
-## 📜 License
-
-MIT — free to use, modify, and share.
-
----
-
-## 👤 Author
+## Author
 
 **Sandeep Mothukuri** — [@sandeepmothukuri](https://github.com/sandeepmothukuri)
  · [cybertechnology.in](https://cybertechnology.in)

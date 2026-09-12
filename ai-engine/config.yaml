@@ -1,9 +1,9 @@
 # AI SOC Engine configuration.
 # Values here are defaults; environment variables override (see config.py ENV_MAP).
-# Backwards-compatible env vars: MODEL_NAME, OLLAMA_HOST, THEHIVE_URL, THEHIVE_API_KEY, LOG_LEVEL.
+# Cortex is intentionally disabled until an analyzer is enabled and an API key
+# is supplied; enabling it then enriches source/destination IP observables.
 
 model:
-  # backend: "ollama" (local LLM) | "offline" (deterministic rule engine, no LLM)
   backend: ollama
   name: llama3
   temperature: 0.1
@@ -13,33 +13,23 @@ ollama:
   host: http://localhost:11434
 
 llm:
-  # Per-call timeout for the LLM. Exceeding this triggers fallback behaviour.
   timeout_seconds: 30
-  # How many retries after a timeout/transport error before falling back.
   max_retries: 1
-  # Total budget for one /analyze request.
   request_timeout_seconds: 60
 
 thresholds:
-  # A verdict of ESCALATE is only honoured at/above this confidence.
   escalate_min_confidence: 0.75
-  # A verdict of CLOSE is only honoured at/above this confidence (auto-close must be confident).
   close_min_confidence: 0.85
-  # If the alert carries no IOCs, confidence is capped at this value.
   missing_ioc_confidence_cap: 0.5
 
 human_approval:
-  # When enabled, ESCALATE/CLOSE decisions are held for analyst approval
-  # (returned as PENDING_APPROVAL) instead of being auto-applied.
   enabled: true
   verdicts: [ESCALATE, CLOSE]
 
 dedupe:
-  # Duplicate events (same key) within this window are skipped.
   ttl_seconds: 300
 
 prompt:
-  # Version directory under prompts/. Bump when prompts change.
   version: v1
 
 safety:
@@ -48,10 +38,19 @@ safety:
 
 thehive:
   url: http://thehive:9000
-  api_key: ""            # set via THEHIVE_API_KEY env
+  api_key: ""
+  timeout_seconds: 10
+
+cortex:
+  enabled: false
+  url: http://cortex:9001
+  api_key: ""
+  # Set to the ID of an enabled Cortex analyzer that accepts ip observables.
+  analyzer_id: ""
+  observable_type: ip
+  tlp: 0
   timeout_seconds: 10
 
 logging:
   level: INFO
-  # Optional path for a structured JSONL decision log ("" = stdout only).
   decision_log: ""

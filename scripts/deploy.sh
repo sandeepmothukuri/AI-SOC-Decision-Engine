@@ -2,16 +2,14 @@
 # Full SOC lab deployment script
 set -euo pipefail
 
-RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
 log() { echo -e "${GREEN}[+]${NC} $1"; }
 warn() { echo -e "${YELLOW}[!]${NC} $1"; }
-err() { echo -e "${RED}[-]${NC} $1"; exit 1; }
+err() { echo -e "[-] $1"; exit 1; }
 
-# Prefer `docker compose` (v2); fall back to `docker-compose` (v1).
 if docker compose version >/dev/null 2>&1; then
     DC="docker compose"
 elif command -v docker-compose >/dev/null 2>&1; then
@@ -25,14 +23,16 @@ check_requirements() {
     command -v docker >/dev/null 2>&1 || err "Docker not found. Install Docker first."
     [ -n "$DC" ] || err "Docker Compose not found. Install docker compose (v2)."
 
-    TOTAL_MEM=$(free -g | awk '/^Mem:/{print $2}')
-    if [ "$TOTAL_MEM" -lt 16 ]; then
-        warn "Less than 16GB RAM detected ($TOTAL_MEM GB). Performance may suffer."
+    if command -v free >/dev/null 2>&1; then
+        TOTAL_MEM=$(free -g | awk '/^Mem:/{print $2}')
+        if [ "${TOTAL_MEM:-0}" -lt 16 ]; then
+            warn "Less than 16GB RAM detected (${TOTAL_MEM:-unknown} GB). Performance may suffer."
+        fi
     fi
 
     DISK_FREE=$(df -BG . | awk 'NR==2{print $4}' | tr -d 'G')
-    if [ "$DISK_FREE" -lt 50 ]; then
-        warn "Less than 50GB free disk ($DISK_FREE GB). Some services may fail."
+    if [ "${DISK_FREE:-0}" -lt 50 ]; then
+        warn "Less than 50GB free disk (${DISK_FREE:-unknown} GB). Some services may fail."
     fi
 }
 
@@ -52,7 +52,7 @@ deploy_service() {
     local file=$2
     log "Deploying $name..."
     $DC -f "$file" up -d
-    log "$name deployed"
+    log "$name deployment command completed"
 }
 
 wait_for_service() {
@@ -62,7 +62,7 @@ wait_for_service() {
     local waited=0
 
     log "Waiting for $name to be ready..."
-    while ! curl -sf "$url" >/dev/null 2>&1; do
+    while ! curl -k -sf "$url" >/dev/null 2>&1; do
         sleep 5
         waited=$((waited + 5))
         if [ $waited -ge $max_wait ]; then
@@ -76,7 +76,7 @@ wait_for_service() {
 print_summary() {
     echo ""
     echo -e "${GREEN}==============================${NC}"
-    echo -e "${GREEN}  AI-SOC Lab Deployed!${NC}"
+    echo -e "${GREEN}  AI-SOC Lab Deployment Ready${NC}"
     echo -e "${GREEN}==============================${NC}"
     echo ""
     echo "  Wazuh Dashboard  → https://localhost:443"
@@ -86,15 +86,12 @@ print_summary() {
     echo "  MISP             → http://localhost:8080"
     echo "  AI Engine        → http://localhost:8888"
     echo "  Ollama           → http://localhost:11434"
+    echo "  Suricata logs    → network-sensors/suricata/logs/eve.json"
+    echo "  Zeek logs        → network-sensors/zeek/logs/*.log"
     echo ""
-    echo "  Default Wazuh credentials: admin / SecretPassword"
-    echo "  Default MISP credentials: admin@admin.test / admin"
-    echo "  Default Shuffle credentials: admin / password"
-    echo ""
-    echo -e "${YELLOW}Next steps:${NC}"
-    echo "  1. Run: ./scripts/setup-ollama.sh"
-    echo "  2. Import shuffle-workflows/ into Shuffle"
-    echo "  3. Connect Wazuh webhook to Shuffle"
+    echo "  Set SOC_SENSOR_INTERFACE to the host NIC to inspect."
+    echo "  Set CORTEX_ENABLED=true, CORTEX_API_KEY and CORTEX_ANALYZER_ID to enable Cortex enrichment."
+    echo "  Replace all default credentials before exposing services outside the lab."
     echo ""
 }
 
@@ -108,17 +105,17 @@ main() {
 
     deploy_service "Wazuh SIEM" "$DOCKER_DIR/docker-compose.wazuh.yml"
     sleep 15
-
+    deploy_service "Network sensors (Suricata + Zeek)" "$DOCKER_DIR/docker-compose.network-sensors.yml"
     deploy_service "TheHive + Cortex" "$DOCKER_DIR/docker-compose.thehive.yml"
     deploy_service "Shuffle SOAR" "$DOCKER_DIR/docker-compose.shuffle.yml"
     deploy_service "MISP" "$DOCKER_DIR/docker-compose.misp.yml"
 
     wait_for_service "Wazuh" "https://localhost:443" 180
     wait_for_service "TheHive" "http://localhost:9000" 120
+    wait_for_service "Cortex" "http://localhost:9001/api/status" 120
     wait_for_service "Shuffle" "http://localhost:3001" 120
 
     deploy_service "Ollama + AI Engine" "$DOCKER_DIR/docker-compose.ollama.yml"
-
     wait_for_service "AI Engine" "http://localhost:8888/health" 120
 
     print_summary

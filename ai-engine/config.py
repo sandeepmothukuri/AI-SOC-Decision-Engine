@@ -1,9 +1,8 @@
-"""
-Runtime configuration for the AI SOC Engine.
+"""Runtime configuration for the AI SOC Engine.
 
-Loads ai-engine/config.yaml, overrides with environment variables.
-All safety/threshold/model settings are centralized here so that behaviour
-is explicit, versioned, and auditable.
+Loads ai-engine/config.yaml and overrides values with environment variables.
+All safety, enrichment, threshold and model settings are centralized here so
+behaviour is explicit, versioned and auditable.
 """
 
 from __future__ import annotations
@@ -18,10 +17,6 @@ import yaml
 CONFIG_DIR = Path(__file__).resolve().parent
 DEFAULT_CONFIG_PATH = CONFIG_DIR / "config.yaml"
 
-# Environment variable prefixes and their mapping onto config keys.
-# The engine reads MODEL_NAME / OLLAMA_HOST / THEHIVE_URL / THEHIVE_API_KEY /
-# LOG_LEVEL for backwards compatibility with the original docker-compose,
-# plus AI_SOC_* namespaced variables for the new settings.
 ENV_MAP = {
     "MODEL_NAME": "model.name",
     "OLLAMA_HOST": "ollama.host",
@@ -39,6 +34,13 @@ ENV_MAP = {
     "AI_SOC_PROMPT_VERSION": "prompt.version",
     "AI_SOC_BLOCKLIST": "safety.blocklist_path",
     "AI_SOC_ALLOWLIST": "safety.allowlist_path",
+    "CORTEX_ENABLED": "cortex.enabled",
+    "CORTEX_URL": "cortex.url",
+    "CORTEX_API_KEY": "cortex.api_key",
+    "CORTEX_ANALYZER_ID": "cortex.analyzer_id",
+    "CORTEX_OBSERVABLE_TYPE": "cortex.observable_type",
+    "CORTEX_TLP": "cortex.tlp",
+    "CORTEX_TIMEOUT_SECONDS": "cortex.timeout_seconds",
 }
 
 
@@ -61,8 +63,6 @@ def _deep_set(d: dict, dotted: str, value: Any) -> None:
 
 @dataclass
 class Config:
-    """Resolved configuration with typed accessors."""
-
     raw: dict = field(default_factory=dict)
 
     @classmethod
@@ -71,15 +71,12 @@ class Config:
         raw: dict = {}
         if cfg_path.exists():
             raw = yaml.safe_load(cfg_path.read_text()) or {}
-
-        # Environment overrides (also supports Docker's OLLAMA_HOST etc.)
         for env_var, dotted in ENV_MAP.items():
             value = os.getenv(env_var)
             if value is not None and value != "":
                 _deep_set(raw, dotted, _coerce(value))
         return cls(raw=raw)
 
-    # --- model ---
     @property
     def backend(self) -> str:
         return str(_deep_get(self.raw, "model.backend", "ollama"))
@@ -96,12 +93,10 @@ class Config:
     def num_predict(self) -> int:
         return int(_deep_get(self.raw, "model.num_predict", 1024))
 
-    # --- ollama ---
     @property
     def ollama_host(self) -> str:
         return str(_deep_get(self.raw, "ollama.host", "http://localhost:11434"))
 
-    # --- llm call behaviour ---
     @property
     def llm_timeout_seconds(self) -> float:
         return float(_deep_get(self.raw, "llm.timeout_seconds", 30.0))
@@ -114,7 +109,6 @@ class Config:
     def request_timeout_seconds(self) -> float:
         return float(_deep_get(self.raw, "llm.request_timeout_seconds", 60.0))
 
-    # --- confidence thresholds ---
     @property
     def escalate_min_confidence(self) -> float:
         return float(_deep_get(self.raw, "thresholds.escalate_min_confidence", 0.75))
@@ -127,7 +121,6 @@ class Config:
     def missing_ioc_confidence_cap(self) -> float:
         return float(_deep_get(self.raw, "thresholds.missing_ioc_confidence_cap", 0.5))
 
-    # --- human approval ---
     @property
     def human_approval_enabled(self) -> bool:
         return bool(_deep_get(self.raw, "human_approval.enabled", True))
@@ -136,17 +129,14 @@ class Config:
     def human_approval_verdicts(self) -> list[str]:
         return list(_deep_get(self.raw, "human_approval.verdicts", ["ESCALATE", "CLOSE"]))
 
-    # --- dedupe ---
     @property
     def dedupe_ttl_seconds(self) -> int:
         return int(_deep_get(self.raw, "dedupe.ttl_seconds", 300))
 
-    # --- prompts ---
     @property
     def prompt_version(self) -> str:
         return str(_deep_get(self.raw, "prompt.version", "v1"))
 
-    # --- safety lists ---
     @property
     def blocklist_path(self) -> Path:
         p = _deep_get(self.raw, "safety.blocklist_path", "safety/blocklist.txt")
@@ -157,7 +147,6 @@ class Config:
         p = _deep_get(self.raw, "safety.allowlist_path", "safety/allowlist.txt")
         return (CONFIG_DIR / p).resolve()
 
-    # --- thehive ---
     @property
     def thehive_url(self) -> str:
         return str(_deep_get(self.raw, "thehive.url", "http://thehive:9000"))
@@ -170,7 +159,34 @@ class Config:
     def thehive_timeout_seconds(self) -> float:
         return float(_deep_get(self.raw, "thehive.timeout_seconds", 10.0))
 
-    # --- logging / observability ---
+    @property
+    def cortex_enabled(self) -> bool:
+        return bool(_deep_get(self.raw, "cortex.enabled", False))
+
+    @property
+    def cortex_url(self) -> str:
+        return str(_deep_get(self.raw, "cortex.url", "http://cortex:9001"))
+
+    @property
+    def cortex_api_key(self) -> str:
+        return str(_deep_get(self.raw, "cortex.api_key", ""))
+
+    @property
+    def cortex_analyzer_id(self) -> str:
+        return str(_deep_get(self.raw, "cortex.analyzer_id", ""))
+
+    @property
+    def cortex_observable_type(self) -> str:
+        return str(_deep_get(self.raw, "cortex.observable_type", "ip"))
+
+    @property
+    def cortex_tlp(self) -> int:
+        return int(_deep_get(self.raw, "cortex.tlp", 0))
+
+    @property
+    def cortex_timeout_seconds(self) -> float:
+        return float(_deep_get(self.raw, "cortex.timeout_seconds", 10.0))
+
     @property
     def log_level(self) -> str:
         return str(_deep_get(self.raw, "logging.level", "INFO"))
@@ -180,11 +196,14 @@ class Config:
         return str(_deep_get(self.raw, "logging.decision_log", ""))
 
     def as_dict(self) -> dict:
-        """Sanitised view of the config (no secrets)."""
-        out = dict(self.raw)
-        th = out.get("thehive", {})
-        if isinstance(th, dict) and th.get("api_key"):
-            th["api_key"] = "***redacted***"
+        """Sanitised configuration view."""
+        import copy
+
+        out = copy.deepcopy(self.raw)
+        for section in ("thehive", "cortex"):
+            value = out.get(section, {})
+            if isinstance(value, dict) and value.get("api_key"):
+                value["api_key"] = "***redacted***"
         return out
 
 

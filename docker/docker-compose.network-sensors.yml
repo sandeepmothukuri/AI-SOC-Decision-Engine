@@ -1,0 +1,39 @@
+version: '3.8'
+
+# Host-network sensors. Set SOC_SENSOR_INTERFACE to the interface carrying
+# traffic that should be inspected (for example eth0 or enp0s3).
+services:
+  suricata:
+    image: jasonish/suricata:8.0
+    container_name: soc-suricata
+    restart: unless-stopped
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - SYS_NICE
+    environment:
+      SURICATA_OPTIONS: "-i ${SOC_SENSOR_INTERFACE:-eth0}"
+    volumes:
+      - ../network-sensors/suricata/logs:/var/log/suricata
+      - ../network-sensors/suricata/rules:/var/lib/suricata
+
+  zeek:
+    image: zeek/zeek:8.2.2
+    container_name: soc-zeek
+    restart: unless-stopped
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    working_dir: /logs
+    command:
+      - zeek
+      - -i
+      - ${SOC_SENSOR_INTERFACE:-eth0}
+      - local
+      - LogAscii::logdir=/logs
+      - LogAscii::use_json=T
+    volumes:
+      - ../network-sensors/zeek/logs:/logs
+      - ../network-sensors/zeek/local.zeek:/usr/local/zeek/share/zeek/site/local.zeek:ro
