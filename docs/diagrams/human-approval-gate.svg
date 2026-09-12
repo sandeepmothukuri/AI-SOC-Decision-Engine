@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="400" viewBox="0 0 1400 400">
+<rect width="1400" height="400" fill="#0b1020"/>
+<text x="700" y="42" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="25" font-weight="700" fill="#f4f7fb">Human Approval and Escalation Path</text>
+<g font-family="Arial,Helvetica,sans-serif">
+<rect x="55" y="125" width="220" height="120" rx="18" fill="#17233b" stroke="#4f7cff" stroke-width="2"/>
+<rect x="335" y="125" width="220" height="120" rx="18" fill="#17233b" stroke="#4f7cff" stroke-width="2"/>
+<polygon points="720,105 820,185 720,265 620,185" fill="#17233b" stroke="#4f7cff" stroke-width="2"/>
+<rect x="900" y="70" width="220" height="95" rx="18" fill="#17233b" stroke="#4f7cff" stroke-width="2"/>
+<rect x="900" y="235" width="220" height="95" rx="18" fill="#17233b" stroke="#4f7cff" stroke-width="2"/>
+<rect x="1180" y="150" width="165" height="95" rx="18" fill="#17233b" stroke="#4f7cff" stroke-width="2"/>
+<g fill="#f4f7fb" font-size="18" font-weight="700" text-anchor="middle"><text x="165" y="163">AI analysis</text><text x="445" y="163">Policy evaluation</text><text x="720" y="181">High impact?</text><text x="1010" y="108">Analyst approval</text><text x="1010" y="273">Controlled auto-action</text><text x="1262" y="188">TheHive case</text></g>
+<g fill="#aebbd2" font-size="14" text-anchor="middle"><text x="165" y="193">triage + confidence</text><text x="445" y="193">thresholds + overrides</text><text x="720" y="214">risk-based gate</text><text x="1010" y="137">review evidence</text><text x="1010" y="302">only when policy allows</text><text x="1262" y="217">audit trail</text></g>
+<g stroke="#7f9cff" stroke-width="3" fill="none"><path d="M275 185h60"/><path d="M555 185h65"/><path d="M820 185h80"/><path d="M720 265v70h180"/><path d="M1120 118h60v80"/><path d="M1120 282h60v-80"/></g><g fill="#7f9cff"><path d="M335 185l-10-7v14z"/><path d="M620 185l-10-7v14z"/><path d="M900 185l-10-7v14z"/><path d="M900 335l-10-7v14z"/><path d="M1180 198l-10-7v14z"/><path d="M1180 202l-10-7v14z"/></g>
+<text x="865" y="177" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#9fb2d0">YES</text><text x="760" y="325" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#9fb2d0">NO / LOW RISK</text>
+</g></svg>
