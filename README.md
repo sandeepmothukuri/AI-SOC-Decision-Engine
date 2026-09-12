@@ -159,7 +159,74 @@ MISP is deployed through `docker/docker-compose.misp.yml`; its enrichment contra
   <img src="docs/screenshots/smoke-test-output.png" alt="AI SOC Decision Engine smoke test output" width="90%">
 </p>
 
-Vendor screenshots are retained separately as reference material and are not represented as live project evidence.
+These two images are project-generated evidence backed by captured validation artifacts. They are distinct from the vendor reference screenshots below.
+
+## Vendor UI reference gallery
+
+The following screenshots are archived **vendor/example references** for the technologies represented in the stack. They are included for visual context only and are **not presented as proof of live deployment or project-generated runtime output**.
+
+<details>
+<summary>Wazuh — dashboard, endpoint security and threat intelligence</summary>
+
+### Wazuh dashboard
+
+![Screenshot of a Wazuh dashboard interface used as a vendor UI reference.](docs/screenshots/vendor-originals/wazuh-dashboard.png)
+
+### Wazuh endpoint security
+
+![Screenshot of Wazuh endpoint security views used as a vendor UI reference.](docs/screenshots/vendor-originals/wazuh-endpoint-security.png)
+
+### Wazuh threat intelligence
+
+![Screenshot of a Wazuh threat intelligence view used as a vendor UI reference.](docs/screenshots/vendor-originals/wazuh-threat-intel.png)
+
+</details>
+
+<details>
+<summary>TheHive / Cortex — alert, case and analyzer response views</summary>
+
+### TheHive alert management
+
+![Screenshot of TheHive alert management used as a vendor UI reference.](docs/screenshots/vendor-originals/thehive-alert-management.png)
+
+### TheHive case management
+
+![Screenshot of TheHive case management used as a vendor UI reference.](docs/screenshots/vendor-originals/thehive-case-management.png)
+
+### TheHive Cortex response
+
+![Screenshot of a TheHive/Cortex response view used as a vendor UI reference.](docs/screenshots/vendor-originals/thehive-cortex-response.png)
+
+</details>
+
+<details>
+<summary>Shuffle — workflow automation interface</summary>
+
+![Screenshot of a Shuffle workflow interface used as a vendor/example reference.](docs/screenshots/vendor-originals/shuffle-workflow.png)
+
+</details>
+
+<details>
+<summary>MISP — dashboard and threat-intelligence trend views</summary>
+
+### MISP dashboard
+
+![Screenshot of the MISP dashboard used as a vendor UI reference.](docs/screenshots/vendor-originals/misp-dashboard.png)
+
+### MISP trendings
+
+![Screenshot of MISP trendings used as an archived vendor/example reference.](docs/screenshots/vendor-originals/misp-trendings.png)
+
+</details>
+
+<details>
+<summary>Ollama / Open WebUI — AI interface reference</summary>
+
+![Screenshot of an Open WebUI interface used as a vendor/example reference for the AI layer.](docs/screenshots/vendor-originals/ollama-openwebui.png)
+
+</details>
+
+For provenance and the full folder-level gallery, see [`docs/screenshots/vendor-originals/README.md`](docs/screenshots/vendor-originals/README.md).
 
 ## Quick start
 
