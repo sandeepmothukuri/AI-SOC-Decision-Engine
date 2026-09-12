@@ -301,7 +301,7 @@ CI validates Python quality, Docker Compose syntax, configuration files, the tes
 
 ## License
 
-MIT — free to use, modify and share.
+MIT — see [LICENSE](LICENSE).
 
 ## 👤 Author
 
