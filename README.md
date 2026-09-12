@@ -299,10 +299,6 @@ CI validates Python quality, Docker Compose syntax, configuration files, the tes
 - Network sensors are passive by default.
 - Default credentials and API keys must never be used outside an isolated lab.
 
-## License
-
-MIT — see [LICENSE](LICENSE).
-
 ## 👤 Author
 
 ## Sandeep Mothukuri
