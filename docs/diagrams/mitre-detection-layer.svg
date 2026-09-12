@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="390" viewBox="0 0 1400 390">
+<rect width="1400" height="390" fill="#0b1020"/>
+<text x="700" y="42" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="25" font-weight="700" fill="#f4f7fb">Detection Engineering Layer — ATT&amp;CK-Aligned</text>
+<g font-family="Arial,Helvetica,sans-serif">
+<g fill="#17233b" stroke="#4f7cff" stroke-width="2"><rect x="55" y="105" width="250" height="185" rx="18"/><rect x="350" y="105" width="250" height="185" rx="18"/><rect x="645" y="105" width="250" height="185" rx="18"/><rect x="940" y="105" width="405" height="185" rx="18"/></g>
+<g fill="#f4f7fb" font-size="18" font-weight="700" text-anchor="middle"><text x="180" y="140">Telemetry</text><text x="475" y="140">Detection</text><text x="770" y="140">ATT&amp;CK context</text><text x="1142" y="140">Decision + response</text></g>
+<g fill="#aebbd2" font-size="14" text-anchor="middle"><text x="180" y="171">Wazuh</text><text x="180" y="194">Suricata / Zeek</text><text x="180" y="217">host + network events</text><text x="475" y="171">rules / correlations</text><text x="475" y="194">normalization</text><text x="475" y="217">triage candidates</text><text x="770" y="171">tactic</text><text x="770" y="194">technique / sub-technique</text><text x="770" y="217">evidence mapping</text><text x="1142" y="171">AI decision support</text><text x="1142" y="194">confidence + policy</text><text x="1142" y="217">TheHive escalation</text></g>
+<g stroke="#7f9cff" stroke-width="3" fill="none"><path d="M305 198h45"/><path d="M600 198h45"/><path d="M895 198h45"/></g><g fill="#7f9cff"><path d="M350 198l-10-7v14z"/><path d="M645 198l-10-7v14z"/><path d="M940 198l-10-7v14z"/></g>
+<rect x="270" y="325" width="860" height="38" rx="19" fill="#111a2d" stroke="#334563"/><text x="700" y="350" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="14" fill="#d9e2f2">Use ATT&amp;CK as an evidence and coverage layer — not as a claim that every technique is automatically detected.</text>
+</g></svg>
