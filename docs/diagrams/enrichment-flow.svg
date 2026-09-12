@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="390" viewBox="0 0 1400 390">
+<rect width="1400" height="390" fill="#0b1020"/>
+<text x="700" y="42" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="25" font-weight="700" fill="#f4f7fb">IOC Enrichment Flow</text>
+<g font-family="Arial,Helvetica,sans-serif">
+<g fill="#17233b" stroke="#4f7cff" stroke-width="2"><rect x="50" y="115" width="230" height="120" rx="18"/><rect x="340" y="115" width="230" height="120" rx="18"/><rect x="630" y="75" width="230" height="120" rx="18"/><rect x="630" y="235" width="230" height="120" rx="18"/><rect x="920" y="115" width="230" height="120" rx="18"/><rect x="1210" y="115" width="150" height="120" rx="18"/></g>
+<g fill="#f4f7fb" font-size="18" font-weight="700" text-anchor="middle"><text x="165" y="151">Observable</text><text x="455" y="151">Context builder</text><text x="745" y="111">Cortex</text><text x="745" y="271">MISP</text><text x="1035" y="151">AI Engine</text><text x="1285" y="151">Decision</text></g>
+<g fill="#aebbd2" font-size="14" text-anchor="middle"><text x="165" y="180">IP · domain · hash</text><text x="455" y="180">source/destination</text><text x="455" y="202">severity + telemetry</text><text x="745" y="142">analyzers / verdicts</text><text x="745" y="302">threat intel context</text><text x="1035" y="180">merge + summarize</text><text x="1035" y="202">schema validation</text><text x="1285" y="180">enrich / escalate</text></g>
+<g stroke="#7f9cff" stroke-width="3" fill="none"><path d="M280 175h60"/><path d="M570 175h60"/><path d="M860 135h60"/><path d="M860 295h60"/><path d="M1035 235v70h175"/></g><g fill="#7f9cff"><path d="M340 175l-10-7v14z"/><path d="M630 175l-10-7v14z"/><path d="M920 135l-10-7v14z"/><path d="M920 295l-10-7v14z"/><path d="M1210 305l-10-7v14z"/></g>
+<rect x="250" y="325" width="900" height="38" rx="19" fill="#111a2d" stroke="#334563"/><text x="700" y="350" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="14" fill="#d9e2f2">Enrichment is optional and fail-soft: unavailable intelligence does not block core triage.</text>
+</g></svg>
