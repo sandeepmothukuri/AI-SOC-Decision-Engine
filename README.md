@@ -40,6 +40,44 @@ The repository contains executable deployment definitions for the complete SOC s
 8. Create a TheHive 5 case for approved/high-confidence escalation.
 9. Record structured decision and enrichment metrics.
 
+## Operational diagrams
+
+### Alert lifecycle
+
+<p align="center">
+  <img src="docs/diagrams/alert-lifecycle.svg" alt="Alert lifecycle from telemetry ingestion through enrichment, AI analysis, decision and case recording." width="100%">
+</p>
+
+### AI decision safety gates
+
+<p align="center">
+  <img src="docs/diagrams/ai-decision-gates.svg" alt="AI decision safety gates for input validation, model validation, policy checks and controlled action." width="100%">
+</p>
+
+### IOC enrichment flow
+
+<p align="center">
+  <img src="docs/diagrams/enrichment-flow.svg" alt="IOC enrichment flow using Cortex and MISP before AI decisioning." width="100%">
+</p>
+
+### Human approval and escalation
+
+<p align="center">
+  <img src="docs/diagrams/human-approval-gate.svg" alt="Human approval and controlled escalation workflow for high-impact SOC decisions." width="100%">
+</p>
+
+### Decision observability
+
+<p align="center">
+  <img src="docs/diagrams/observability-metrics.svg" alt="Decision observability metrics covering telemetry, AI processing, decision quality and audit evidence." width="100%">
+</p>
+
+### ATT&amp;CK-aligned detection layer
+
+<p align="center">
+  <img src="docs/diagrams/mitre-detection-layer.svg" alt="ATT&CK-aligned detection engineering layer connecting telemetry, detection, evidence mapping and response." width="100%">
+</p>
+
 ## Network sensors
 
 <p align="center">
