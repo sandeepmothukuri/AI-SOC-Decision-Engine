@@ -37,3 +37,9 @@ secrets/
 
 # pytest
 .pytest_cache/
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+data/*.db

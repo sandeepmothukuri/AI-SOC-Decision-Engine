@@ -8,7 +8,7 @@
   <img src="https://img.shields.io/badge/Case%20Mgmt-TheHive%205-E95420?style=for-the-badge" alt="TheHive 5">
   <img src="https://img.shields.io/badge/Local%20LLM-Ollama%20%7C%20LLaMA%203-000000?style=for-the-badge" alt="Ollama">
   <img src="https://img.shields.io/badge/MITRE%20ATT%26CK-v14-FF6F00?style=for-the-badge" alt="MITRE ATT&CK">
-  <img src="https://img.shields.io/badge/Tests-42%20Passed-success?style=for-the-badge" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-55%20Passed-success?style=for-the-badge" alt="Tests">
   <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License">
 </p>
 
@@ -24,26 +24,18 @@ Designed as the decision and orchestration brain for modern Blue Team security o
 
 - [Architectural Overview](#-architectural-overview)
 - [Component Matrix](#-component-matrix)
+- [Enterprise Production Features](#-enterprise-production-features)
+  - [1. Analyst Feedback Loop & Active Learning](#1-analyst-feedback-loop--active-learning-continuous-evaluation)
+  - [2. Multi-Provider LLM Gateway & PII/Secret Redaction](#2-enterprise-multi-provider-llm-gateway--piisecret-redaction)
+  - [3. Prometheus Metrics & Grafana Dashboard](#3-prometheus-metrics--grafana-dashboard-metrics)
+  - [4. MITRE ATT&CK Navigator Layer Generator](#4-mitre-attck-navigator-layer-generator)
+  - [5. Deterministic Structured Outputs & Grammar Constraints](#5-deterministic-structured-outputs-pydantic-v2--grammar-constraints)
 - [End-to-End Decision Pipeline](#-end-to-end-decision-pipeline)
 - [Operational & Architecture Diagrams](#-operational--architecture-diagrams)
 - [Visual Evidence & Runtime Output](#-visual-evidence--runtime-output)
 - [Platform Interface Gallery](#-platform-interface-gallery)
 - [Step-by-Step Installation & Setup](#-step-by-step-installation--setup)
-  - [Prerequisites](#prerequisites)
-  - [Option 1: Lightweight AI Decision Engine (Standalone)](#option-1-lightweight-ai-decision-engine-standalone)
-  - [Option 2: AI Engine with Local LLM (Ollama & LLaMA 3)](#option-2-ai-engine-with-local-llm-ollama--llama-3)
-  - [Option 3: Full Enterprise SOC Stack (Docker Compose)](#option-3-full-enterprise-soc-stack-docker-compose)
 - [Demonstrated Capabilities & Hands-On Scenarios](#-demonstrated-capabilities--hands-on-scenarios)
-  - [Scenario 1: SSH Brute-Force & Credential Access (T1110)](#scenario-1-ssh-brute-force--credential-access-t1110)
-  - [Scenario 2: Reconnaissance SYN Port Scan (T1046)](#scenario-2-reconnaissance-syn-port-scan-t1046)
-  - [Scenario 3: Web Application SQL Injection Exploit (T1190)](#scenario-3-web-application-sql-injection-exploit-t1190)
-  - [Scenario 4: Ransomware / Emotet Binary Execution (T1204)](#scenario-4-ransomware--emotet-binary-execution-t1204)
-  - [Scenario 5: DNS Tunneling & C2 Exfiltration (T1048 / T1071.004)](#scenario-5-dns-tunneling--c2-exfiltration-t1048--t1071004)
-  - [Scenario 6: Benign Maintenance Scanner Suppression (False Positive Handling)](#scenario-6-benign-maintenance-scanner-suppression-false-positive-handling)
-  - [Scenario 7: Adversarial Prompt Injection Neutralization](#scenario-7-adversarial-prompt-injection-neutralization)
-  - [Scenario 8: Human-in-the-Loop Approval Workflow](#scenario-8-human-in-the-loop-approval-workflow)
-  - [Scenario 9: Natural Language to SIEM Query (NL-to-DSL)](#scenario-9-natural-language-to-siem-query-nl-to-dsl)
-  - [Scenario 10: Incident Response Playbook Generation](#scenario-10-incident-response-playbook-generation)
 - [REST API Reference](#-rest-api-reference)
 - [Automated Validation & Testing](#-automated-validation--testing)
 - [MITRE ATT&CK Mapping](#-mitre-attck-mapping)
@@ -83,6 +75,71 @@ The complete detection, enrichment, AI triage, and response workflow unites nine
 | **Ollama** | Local, self-hosted LLM inference (LLaMA 3, Mistral) | `docker/docker-compose.ollama.yml` | ✅ Native REST API Client |
 | **TheHive 5** | Security incident and case management | `docker/docker-compose.thehive.yml` | ✅ Automated Case Escalation Client |
 | **AI SOC Decision Engine** | Core decision-support, safety gates, and triage engine | `ai-engine/` | ✅ Production FastAPI Engine |
+
+---
+
+## 🏢 Enterprise Production Features
+
+The engine is engineered for mission-critical enterprise SOC environments where privacy, auditability, multi-cloud flexibility, and continuous human feedback are paramount:
+
+### 1. Analyst Feedback Loop & Active Learning (Continuous Evaluation)
+When analysts approve or reject staged decisions via `POST /approve/{decision_id}` or `POST /reject/{decision_id}`, the feedback is persisted into an SQLite audit store (`data/feedback.db`) with structured reason codes:
+
+| Action | Supported Reason Codes | Operational Impact |
+|---|---|---|
+| **APPROVE** | `CORRECT_TRIAGE`, `POLICY_OVERRIDE`, `SEVERITY_CONFIRMED`, `CONTAINMENT_AUTHORIZED` | Confirmed true positive; escalates case to TheHive and feeds few-shot prompt bank. |
+| **REJECT** | `FALSE_POSITIVE`, `WRONG_SEVERITY`, `HALLUCINATED_INDICATOR`, `BENIGN_SCANNER`, `INSUFFICIENT_EVIDENCE` | Suppresses alert; calculates drift telemetry and tracks false-positive reduction rate. |
+
+- **Drift Telemetry:** Monitored via `GET /feedback/stats` to alert engineering when analyst rejection rates exceed 35% over recent triage decisions.
+- **Few-Shot Prompt Augmentation:** High-confidence approved decisions can be dynamically queried via `GET /feedback/few-shot` to ground LLM prompts with validated organizational precedent.
+- **Continuous Dataset Export:** Stored feedback records can be exported via `GET /feedback/export` for local model fine-tuning and benchmark auditing.
+
+### 2. Enterprise Multi-Provider LLM Gateway & PII/Secret Redaction
+The engine abstracts model inference behind an enterprise gateway (`ai-engine/llm_backends.py`) supporting local and cloud LLM providers:
+- **Ollama:** Self-hosted, private local inference (`llama3`, `mistral`, `deepseek-r1`).
+- **Azure OpenAI:** Enterprise private endpoints with `api-key` auth and `response_format={"type": "json_object"}`.
+- **OpenAI & Compatible:** Commercial API (`gpt-4o-mini`) or local OpenAI-compatible runtimes (vLLM, LiteLLM, TensorRT).
+- **Groq:** Ultra-low latency LPU cloud inference (`llama-3.3-70b-versatile`).
+- **Anthropic Claude:** Direct Messages API (`claude-3-5-sonnet-20241022`).
+- **AWS Bedrock:** AWS-managed foundation models.
+- **Offline Rule Engine:** Fully deterministic fallback requiring zero external network or GPU resources.
+
+#### Automated PII & Secret Redaction (`ai-engine/redaction.py`)
+Before telemetry is dispatched to any external cloud LLM, the built-in scrubbing engine automatically redacts sensitive assets:
+- **Private RFC 1918 IPs:** Internal IPv4s (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`) are dynamically mapped to tokenized pseudonyms (`[INTERNAL_IP_1]`, `[INTERNAL_IP_2]`) to preserve correlation without leaking network topology. Public malicious IPs are retained for CTI scoring.
+- **Credentials & API Tokens:** Passwords (`password=...`), Bearer JWTs (`Bearer ey...`), and cryptographic private keys are scrubbed and replaced with `[REDACTED_CREDENTIAL]`.
+- **Internal Domain Names & Hostnames:** Active Directory servers (`DC01.corp`, `srv-finance.internal`, `*.local`) are masked.
+- **User Profile Paths:** Windows and Unix user directory paths (`C:\Users\<user>\`, `/home/<user>/`) are sanitized.
+
+### 3. Prometheus Metrics & Grafana Dashboard (`/metrics`)
+The engine exposes a production-ready `/metrics` endpoint formatted to official Prometheus text exposition standards:
+
+- `soc_decisions_total{verdict="ESCALATE|CLOSE|ENRICH"}`: Triage decisions breakdown.
+- `soc_triage_latency_seconds_bucket`: Latency histogram with 11 buckets measuring p50, p95, and p99 percentiles.
+- `soc_prompt_injections_total`: Real-time counter of intercepted adversarial prompt injections.
+- `soc_llm_fallbacks_total`: Total fail-soft transfers to deterministic rule analysis.
+- `soc_llm_malformed_rejected_total`: Model outputs rejected for schema invalidity.
+- `soc_llm_token_usage_total{provider, model}`: Token consumption tracking across providers.
+- `soc_feedback_total{action, reason_code}`: Human analyst review distribution.
+- `soc_redactions_total{category}`: PII, credential, and IP scrubbing telemetry.
+- `soc_dedupe_duplicates_total`: Storm alert suppression rate.
+
+> **Grafana Dashboard:** Import `docs/dashboards/ai-soc-overview.json` directly into Grafana to instantly visualize triage velocity, latency distributions, injection alerts, token expenses, and analyst feedback loops.
+
+### 4. MITRE ATT&CK Navigator Layer Generator
+Export dynamic, color-coded detection coverage layers for the official MITRE ATT&CK Navigator:
+- **API Endpoint:** `GET /export/attack-layer?min_score=0` returns official Navigator v4.5 JSON format.
+- **CLI Generation:**
+  ```bash
+  python scripts/generate_attack_layer.py --out docs/attack-navigator-layer.json
+  ```
+- **Visualization:** Upload the generated JSON directly to [mitre-attack.github.io/attack-navigator](https://mitre-attack.github.io/attack-navigator/) to inspect live enterprise technique coverage, threat scores, and dominant escalation verdicts.
+
+### 5. Deterministic Structured Outputs (Pydantic v2 & Grammar Constraints)
+Eliminates non-deterministic LLM behavior and fragile markdown regex parsing:
+- **Ollama Native Grammar Constraints:** Passes `"format": "json"` to Ollama to enforce strict grammar-guided decoding in llama.cpp.
+- **Cloud Schema Enforcement:** Supplies `"response_format": {"type": "json_object"}` to Azure OpenAI, OpenAI, and Groq endpoints.
+- **Fast-Path Validator:** Direct JSON parsing with Pydantic v2 validation ensures instant ingestion when structured constraints are active, with resilient fallback to markdown-fenced object extraction only when necessary.
 
 ---
 
@@ -647,18 +704,23 @@ Generates dynamic, step-by-step incident containment runbooks tailored to specif
 |---|---|---|---|
 | `GET` | `/health` | Engine status, active model, backend mode, and feature flags | None |
 | `POST` | `/analyze` | Main triage endpoint — enriches alert and returns structured decision | `AlertPayload` JSON |
-| `POST` | `/approve/{id}` | Approve a staged decision awaiting human approval | None |
-| `POST` | `/reject/{id}` | Reject a staged decision | None |
+| `GET` | `/metrics` | Prometheus text exposition format (latency histograms, decisions, injections, tokens) | None |
+| `POST` | `/approve/{id}` | Approve staged decision with reason codes & persist active learning feedback | Optional `FeedbackSubmission` JSON |
+| `POST` | `/reject/{id}` | Reject staged decision with reason codes & record drift metrics | Optional `FeedbackSubmission` JSON |
+| `GET` | `/feedback/stats` | Aggregated human feedback metrics, drift alerts, false-positive reduction rate | None |
+| `GET` | `/feedback/few-shot` | Retrieve validated high-confidence accepted decisions for few-shot prompt bank | Query `?limit=5` |
+| `GET` | `/feedback/export` | Export stored analyst decisions dataset for continuous model evaluation | Query `?limit=1000` |
+| `GET` | `/export/attack-layer` | Generate dynamic MITRE ATT&CK Navigator v4.5 JSON layer | Query `?min_score=0` |
 | `POST` | `/playbook` | Generate MITRE-aligned incident response playbook | `{"alert_type": "...", "context": "..."}` |
 | `POST` | `/query` | Natural language translation to Elasticsearch / OpenSearch DSL | `{"question": "..."}` |
 | `GET` | `/stats` | Operational performance metrics, latency percentiles, and counts | None |
-| `GET` | `/config` | Read current engine configuration settings | None |
+| `GET` | `/config` | Read current engine configuration settings (secrets sanitized) | None |
 
 ---
 
 ## 🧪 Automated Validation & Testing
 
-The repository maintains a test suite covering schema adherence, adversarial inputs, LLM timeout/retry mechanics, deterministic fallback, and integration pipeline runs.
+The repository maintains an automated test suite covering schema adherence, adversarial inputs, LLM timeout/retry mechanics, deterministic fallback, multi-provider gateway routing, PII redaction, feedback persistence, and end-to-end integration runs.
 
 ### Running Unit & Integration Tests:
 
@@ -667,14 +729,15 @@ python -m pytest tests/ -v
 ```
 
 ```
-tests/test_analyzer.py .............                                     [ 30%]
-tests/test_app_api.py ......                                             [ 45%]
-tests/test_integration_pipeline.py ...                                   [ 52%]
-tests/test_safety.py ......                                              [ 66%]
-tests/test_schema.py ..........                                          [ 90%]
+tests/test_analyzer.py .............                                     [ 23%]
+tests/test_app_api.py ......                                             [ 34%]
+tests/test_enterprise_features.py .............                          [ 58%]
+tests/test_integration_pipeline.py ...                                   [ 63%]
+tests/test_safety.py ......                                              [ 74%]
+tests/test_schema.py ..........                                          [ 92%]
 tests/test_thehive_client.py ....                                        [100%]
 
-============================== 42 passed in 15.12s ===============================
+============================== 55 passed in 17.29s ===============================
 ```
 
 ### Running the End-to-End Smoke Test Harness:

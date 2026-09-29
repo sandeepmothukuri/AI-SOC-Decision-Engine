@@ -15,12 +15,14 @@ from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel
 
 from analyzer import AlertAnalyzer
 from config import Config
 from cortex_client import CortexClient
+from feedback import FeedbackSubmission
+from metrics import metrics_registry
 from schemas import AlertPayload, TriageResult
 from thehive_client import TheHiveClient
 
@@ -114,9 +116,16 @@ def create_app(config: Optional[Config] = None) -> FastAPI:
 
         return result
 
+    @app.get("/metrics", response_class=PlainTextResponse)
+    async def get_metrics():
+        return PlainTextResponse(
+            metrics_registry.render_prometheus_exposition(),
+            media_type="text/plain; version=0.0.4; charset=utf-8",
+        )
+
     @app.post("/approve/{decision_id}")
-    async def approve(decision_id: str):
-        held = analyzer.approve(decision_id)
+    async def approve(decision_id: str, body: Optional[FeedbackSubmission] = None):
+        held = analyzer.approve(decision_id, submission=body)
         if held is None:
             raise HTTPException(status_code=404, detail="unknown or expired decision")
         await hive_client.create_case(held["alert"], held["analysis"].model_dump())
@@ -124,14 +133,35 @@ def create_app(config: Optional[Config] = None) -> FastAPI:
             "decision_id": decision_id,
             "status": "approved",
             "verdict": held["analysis"].verdict,
+            "feedback": held.get("feedback"),
         }
 
     @app.post("/reject/{decision_id}")
-    async def reject(decision_id: str):
-        held = analyzer.reject(decision_id)
+    async def reject(decision_id: str, body: Optional[FeedbackSubmission] = None):
+        held = analyzer.reject(decision_id, submission=body)
         if held is None:
             raise HTTPException(status_code=404, detail="unknown or expired decision")
-        return {"decision_id": decision_id, "status": "rejected"}
+        return {
+            "decision_id": decision_id,
+            "status": "rejected",
+            "feedback": held.get("feedback"),
+        }
+
+    @app.get("/feedback/stats")
+    async def feedback_stats():
+        return analyzer.get_feedback_stats()
+
+    @app.get("/feedback/few-shot")
+    async def feedback_few_shot(limit: int = 5):
+        return {"few_shot_examples": analyzer.get_few_shot_examples(limit=limit)}
+
+    @app.get("/feedback/export")
+    async def feedback_export(limit: int = 1000):
+        return {"dataset": analyzer.export_feedback_dataset(limit=limit)}
+
+    @app.get("/export/attack-layer")
+    async def export_attack_layer(min_score: int = 0):
+        return analyzer.attack_generator.generate_layer(min_score=min_score)
 
     @app.post("/playbook")
     async def generate_playbook(body: PlaybookRequest):

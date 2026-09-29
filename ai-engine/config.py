@@ -41,6 +41,16 @@ ENV_MAP = {
     "CORTEX_OBSERVABLE_TYPE": "cortex.observable_type",
     "CORTEX_TLP": "cortex.tlp",
     "CORTEX_TIMEOUT_SECONDS": "cortex.timeout_seconds",
+    "AZURE_OPENAI_ENDPOINT": "azure_openai.endpoint",
+    "AZURE_OPENAI_API_KEY": "azure_openai.api_key",
+    "AZURE_OPENAI_DEPLOYMENT": "azure_openai.deployment",
+    "OPENAI_API_KEY": "openai.api_key",
+    "OPENAI_BASE_URL": "openai.base_url",
+    "GROQ_API_KEY": "groq.api_key",
+    "ANTHROPIC_API_KEY": "anthropic.api_key",
+    "AWS_BEDROCK_REGION": "aws_bedrock.region",
+    "AI_SOC_REDACTION": "redaction.enabled",
+    "FEEDBACK_DB_PATH": "feedback.db_path",
 }
 
 
@@ -195,12 +205,21 @@ class Config:
     def decision_log_path(self) -> str:
         return str(_deep_get(self.raw, "logging.decision_log", ""))
 
+    @property
+    def redaction_enabled(self) -> bool:
+        return bool(_deep_get(self.raw, "redaction.enabled", True))
+
+    @property
+    def feedback_db_path(self) -> Optional[str]:
+        val = _deep_get(self.raw, "feedback.db_path")
+        return str(val) if val else None
+
     def as_dict(self) -> dict:
         """Sanitised configuration view."""
         import copy
 
         out = copy.deepcopy(self.raw)
-        for section in ("thehive", "cortex"):
+        for section in ("thehive", "cortex", "azure_openai", "openai", "groq", "anthropic"):
             value = out.get(section, {})
             if isinstance(value, dict) and value.get("api_key"):
                 value["api_key"] = "***redacted***"

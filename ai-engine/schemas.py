@@ -107,17 +107,24 @@ class TriageResult(BaseModel):
 
 
 def parse_model_json(raw: str) -> dict[str, Any]:
-    """Extract the first JSON object from a model response.
+    """Parse JSON directly (structured outputs fast-path) or extract first JSON object.
 
-    Unlike the original implementation, this does NOT swallow failures: a
-    response with no parseable JSON object raises ValueError so callers can
-    treat it as malformed.
+    Enforces deterministic validation so malformed model outputs raise ValueError.
     """
     import json
     import re
 
     text = raw.strip()
-    # Strip markdown code fences if the model wrapped the JSON.
+    # Fast path for native structured output (format=json or response_format=json_object)
+    if text.startswith("{") and text.endswith("}"):
+        try:
+            parsed = json.loads(text)
+            if isinstance(parsed, dict):
+                return parsed
+        except json.JSONDecodeError:
+            pass
+
+    # Strip markdown code fences if model wrapped the JSON
     fence = re.search(r"```(?:json)?\s*(.*?)\s*```", text, re.DOTALL)
     if fence:
         text = fence.group(1).strip()

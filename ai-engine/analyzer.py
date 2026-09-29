@@ -26,8 +26,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
+from attack_layer import global_attack_generator
 from config import Config
-from llm_backends import BackendError, OfflineBackend, OllamaBackend
+from feedback import FeedbackStore, FeedbackSubmission
+from llm_backends import BackendError, BaseLLMBackend, OfflineBackend, create_llm_backend
+from metrics import metrics_registry
+from redaction import Redactor
 from safety import SafetyEngine
 from schemas import AIAnalysis, TriageResult, parse_model_json
 
@@ -83,17 +87,14 @@ class AlertAnalyzer:
         self.prompts = PromptManager(self.config.prompt_version)
         self.safety = SafetyEngine(self.config.blocklist_path, self.config.allowlist_path)
         self.offline = OfflineBackend(self.safety)
+        self.feedback_store = FeedbackStore(self.config.feedback_db_path)
+        self.redactor = Redactor(enabled=self.config.redaction_enabled)
+        self.attack_generator = global_attack_generator
 
         if self.config.backend == "offline":
             self.llm = None
         else:
-            self.llm = OllamaBackend(
-                host=self.config.ollama_host,
-                model=self.model_name,
-                temperature=self.config.temperature,
-                num_predict=self.config.num_predict,
-                timeout=self.config.llm_timeout_seconds,
-            )
+            self.llm = create_llm_backend(self.config)
 
         # Deduplication cache (OrderedDict as an LRU).
         self._seen: OrderedDict[str, float] = OrderedDict()
@@ -157,6 +158,7 @@ class AlertAnalyzer:
 
         if self.is_duplicate(alert):
             self._stats["duplicates"] += 1
+            metrics_registry.record_duplicate()
             logger.info("Duplicate event skipped: alert_id=%s", alert.get("alert_id"))
             # A duplicate still returns a valid, structured result so callers
             # can handle it uniformly; automation is suppressed downstream.
@@ -180,6 +182,7 @@ class AlertAnalyzer:
         injection = safety_assessment.injection_detected
         if injection:
             self._stats["injection_detected"] += 1
+            metrics_registry.record_injection()
 
         # Enrichment accounting (MISP context supplied by Shuffle; Cortex optional).
         misp = alert.get("misp_context") or {}
@@ -206,6 +209,7 @@ class AlertAnalyzer:
             if self.llm is not None:
                 fallback_used = True
                 self._stats["fallbacks"] += 1
+                metrics_registry.record_fallback()
 
         # 3. Deterministic overrides (safety floor).
         analysis = self._apply_safety_overrides(analysis, alert, safety_assessment, injection)
@@ -234,10 +238,18 @@ class AlertAnalyzer:
         else:
             self._stats["enriched"] += 1
 
-        elapsed_ms = int((time.monotonic() - started) * 1000)
+        duration_sec = time.monotonic() - started
+        elapsed_ms = int(duration_sec * 1000)
         self._stats["latencies_ms"].append(elapsed_ms)
         if len(self._stats["latencies_ms"]) > 5000:
             self._stats["latencies_ms"] = self._stats["latencies_ms"][-5000:]
+
+        metrics_registry.record_decision(analysis.verdict, duration_sec)
+        self.attack_generator.record_decision(
+            analysis.mitre_techniques,
+            severity=analysis.severity,
+            verdict=analysis.verdict,
+        )
 
         result = TriageResult(
             alert_id=alert.get("alert_id", ""),
@@ -264,12 +276,18 @@ class AlertAnalyzer:
 
     # ------------------------------------------------------------------ #
     async def _try_llm(self, alert: dict) -> Optional[AIAnalysis]:
-        prompt = self.prompts.get("triage").replace("{alert}", json.dumps(alert, indent=2))
+        sanitized_alert = alert
+        if self.config.backend not in ("offline", "scripted"):
+            sanitized_alert, r_counts = self.redactor.redact_alert(alert)
+            metrics_registry.record_redactions(r_counts)
+
+        schema = AIAnalysis.model_json_schema()
+        prompt = self.prompts.get("triage").replace("{alert}", json.dumps(sanitized_alert, indent=2))
         last_err: Optional[Exception] = None
         for attempt in range(self.config.llm_max_retries + 1):
             try:
                 raw = await asyncio.wait_for(
-                    self.llm.generate(prompt),
+                    self.llm.generate(prompt, schema=schema),
                     timeout=self.config.llm_timeout_seconds + 5,
                 )
                 parsed = parse_model_json(raw)
@@ -280,6 +298,7 @@ class AlertAnalyzer:
             except (BackendError, ValueError, TypeError) as e:
                 last_err = e
                 self._stats["malformed_rejected"] += 1
+                metrics_registry.record_malformed()
                 logger.error("LLM output rejected (attempt %d): %s", attempt + 1, e)
             except Exception as e:  # noqa: BLE001 - surface unexpected failures
                 last_err = e
@@ -357,13 +376,44 @@ class AlertAnalyzer:
         return AIAnalysis.model_validate(data)
 
     # ------------------------------------------------------------------ #
-    # Human approval
+    # Human approval & Analyst Feedback Loop (Active Learning)
     # ------------------------------------------------------------------ #
-    def approve(self, decision_id: str) -> Optional[dict]:
-        return self._pending.pop(decision_id, None)
+    def approve(
+        self, decision_id: str, submission: Optional[FeedbackSubmission] = None
+    ) -> Optional[dict]:
+        held = self._pending.pop(decision_id, None)
+        if held is None:
+            return None
+        self._stats["pending_approval"] = max(0, self._stats["pending_approval"] - 1)
+        fb = self.feedback_store.record_feedback(
+            decision_id, "APPROVE", held["alert"], held["analysis"], submission
+        )
+        metrics_registry.record_feedback("APPROVE", fb.get("reason_code", "CORRECT_TRIAGE"))
+        held["feedback"] = fb
+        return held
 
-    def reject(self, decision_id: str) -> Optional[dict]:
-        return self._pending.pop(decision_id, None)
+    def reject(
+        self, decision_id: str, submission: Optional[FeedbackSubmission] = None
+    ) -> Optional[dict]:
+        held = self._pending.pop(decision_id, None)
+        if held is None:
+            return None
+        self._stats["pending_approval"] = max(0, self._stats["pending_approval"] - 1)
+        fb = self.feedback_store.record_feedback(
+            decision_id, "REJECT", held["alert"], held["analysis"], submission
+        )
+        metrics_registry.record_feedback("REJECT", fb.get("reason_code", "FALSE_POSITIVE"))
+        held["feedback"] = fb
+        return held
+
+    def get_feedback_stats(self) -> dict[str, Any]:
+        return self.feedback_store.get_stats()
+
+    def get_few_shot_examples(self, limit: int = 5) -> list[dict[str, Any]]:
+        return self.feedback_store.get_few_shot_examples(limit=limit)
+
+    def export_feedback_dataset(self, limit: int = 1000) -> list[dict[str, Any]]:
+        return self.feedback_store.export_dataset(limit=limit)
 
     def pending_count(self) -> int:
         return len(self._pending)
