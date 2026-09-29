@@ -10,12 +10,13 @@ All alerts are clearly-labelled synthetic test data (not real incidents).
 
 from __future__ import annotations
 
+import os
 import sys
 from datetime import datetime, timezone
 
 import httpx
 
-AI_ENGINE_URL = "http://localhost:8888"
+AI_ENGINE_URL = os.getenv("AI_ENGINE_URL", "http://localhost:8888")
 
 TEST_ALERTS = {
     "ssh-bruteforce": {

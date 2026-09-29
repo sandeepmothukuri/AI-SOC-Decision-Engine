@@ -70,7 +70,7 @@ class Config:
         cfg_path = Path(path) if path else DEFAULT_CONFIG_PATH
         raw: dict = {}
         if cfg_path.exists():
-            raw = yaml.safe_load(cfg_path.read_text()) or {}
+            raw = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
         for env_var, dotted in ENV_MAP.items():
             value = os.getenv(env_var)
             if value is not None and value != "":

@@ -56,7 +56,7 @@ def test_full_chain_true_positive_creates_case():
 
     server, engine_url = start_engine(integration_config(thehive.url))
     try:
-        workflow = json.loads(WORKFLOW_PATH.read_text())
+        workflow = json.loads(WORKFLOW_PATH.read_text(encoding="utf-8"))
         runner = WorkflowRunner(
             workflow,
             engine_url,
@@ -106,7 +106,7 @@ def test_misp_down_pipeline_still_runs():
     misp = make_misp(enabled=False)  # MISP unavailable
     server, engine_url = start_engine(integration_config(thehive.url))
     try:
-        workflow = json.loads(WORKFLOW_PATH.read_text())
+        workflow = json.loads(WORKFLOW_PATH.read_text(encoding="utf-8"))
         runner = WorkflowRunner(workflow, engine_url, env={"MISP_URL": misp.url})
         trigger = {
             "id": "TEST-MISPDOWN-006",

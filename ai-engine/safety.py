@@ -121,7 +121,7 @@ class SafetyEngine:
         if not path.exists():
             return []
         out = []
-        for line in path.read_text().splitlines():
+        for line in path.read_text(encoding="utf-8").splitlines():
             line = line.split("#", 1)[0].strip()
             if line:
                 out.append(line.lower())

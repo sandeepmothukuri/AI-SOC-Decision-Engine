@@ -49,14 +49,14 @@ class PromptManager:
     def _load(self) -> None:
         if MANIFEST_PATH.exists():
             try:
-                self._manifest = json.loads(MANIFEST_PATH.read_text())
+                self._manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
             except json.JSONDecodeError:
                 logger.warning("prompt_manifest.json is not valid JSON")
         version_dir = PROMPT_DIR / self.version
         if not version_dir.exists():
             raise FileNotFoundError(f"Prompt version '{self.version}' not found under {PROMPT_DIR}")
         for f in sorted(version_dir.glob("*.txt")):
-            content = f.read_text()
+            content = f.read_text(encoding="utf-8")
             expected = self._manifest.get("versions", {}).get(self.version, {}).get(f.name)
             actual = hashlib.sha256(content.encode()).hexdigest()
             if expected and actual != expected:

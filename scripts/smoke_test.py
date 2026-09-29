@@ -110,7 +110,7 @@ def to_wazuh_trigger(alert: dict) -> dict:
 
 
 def run_chain(engine_url: str, alert: dict, misp, cortex, thehive) -> dict:
-    workflow = json.loads(WORKFLOW_PATH.read_text())
+    workflow = json.loads(WORKFLOW_PATH.read_text(encoding="utf-8"))
     runner = WorkflowRunner(
         workflow,
         engine_url,
@@ -345,9 +345,9 @@ def main() -> int:
     # Print + persist.
     print_report(report)
     if not args.no_report:
-        (out_dir / f"smoke-test-{stamp}.json").write_text(json.dumps(report, indent=2) + "\n")
-        (out_dir / "latest.json").write_text(json.dumps(report, indent=2) + "\n")
-        (out_dir / f"smoke-test-{stamp}.md").write_text(render_markdown(report))
+        (out_dir / f"smoke-test-{stamp}.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+        (out_dir / "latest.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+        (out_dir / f"smoke-test-{stamp}.md").write_text(render_markdown(report), encoding="utf-8")
         print(f"\nReport written to {out_dir}")
     return 0
 
