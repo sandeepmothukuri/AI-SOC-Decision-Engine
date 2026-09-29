@@ -220,6 +220,9 @@ Visual reference documentation for each core technology integrated into this SOC
   <img src="docs/screenshots/vendor-originals/shuffle-workflow.png" alt="Shuffle SOAR Workflow" width="48%">
   <img src="docs/screenshots/vendor-originals/misp-dashboard.png" alt="MISP CTI Dashboard" width="48%">
 </p>
+<p align="center">
+  <img src="docs/screenshots/vendor-originals/misp-trendings.png" alt="MISP Threat Intelligence Trendings" width="90%">
+</p>
 
 ### Ollama Local LLM Inference Engine
 <p align="center">
