@@ -20,7 +20,6 @@ from abc import ABC, abstractmethod
 from typing import Any, Optional
 
 import httpx
-
 from metrics import metrics_registry
 
 logger = logging.getLogger(__name__)
@@ -142,7 +141,9 @@ class AzureOpenAIBackend(BaseLLMBackend):
         except httpx.TimeoutException as e:
             raise BackendError(f"Azure OpenAI timed out after {self.timeout}s") from e
         except httpx.HTTPStatusError as e:
-            raise BackendError(f"Azure OpenAI HTTP {e.response.status_code}: {e.response.text}") from e
+            raise BackendError(
+                f"Azure OpenAI HTTP {e.response.status_code}: {e.response.text}"
+            ) from e
         except Exception as e:
             raise BackendError(f"Azure OpenAI error: {e}") from e
 
@@ -202,7 +203,9 @@ class OpenAIBackend(BaseLLMBackend):
         except httpx.TimeoutException as e:
             raise BackendError(f"OpenAI compatible endpoint timed out after {self.timeout}s") from e
         except httpx.HTTPStatusError as e:
-            raise BackendError(f"OpenAI compatible HTTP {e.response.status_code}: {e.response.text}") from e
+            raise BackendError(
+                f"OpenAI compatible HTTP {e.response.status_code}: {e.response.text}"
+            ) from e
         except Exception as e:
             raise BackendError(f"OpenAI compatible error: {e}") from e
 

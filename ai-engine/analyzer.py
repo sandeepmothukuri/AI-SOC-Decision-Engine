@@ -29,7 +29,7 @@ from typing import Any, Optional
 from attack_layer import global_attack_generator
 from config import Config
 from feedback import FeedbackStore, FeedbackSubmission
-from llm_backends import BackendError, BaseLLMBackend, OfflineBackend, create_llm_backend
+from llm_backends import BackendError, OfflineBackend, create_llm_backend
 from metrics import metrics_registry
 from redaction import Redactor
 from safety import SafetyEngine
@@ -282,7 +282,9 @@ class AlertAnalyzer:
             metrics_registry.record_redactions(r_counts)
 
         schema = AIAnalysis.model_json_schema()
-        prompt = self.prompts.get("triage").replace("{alert}", json.dumps(sanitized_alert, indent=2))
+        prompt = self.prompts.get("triage").replace(
+            "{alert}", json.dumps(sanitized_alert, indent=2)
+        )
         last_err: Optional[Exception] = None
         for attempt in range(self.config.llm_max_retries + 1):
             try:

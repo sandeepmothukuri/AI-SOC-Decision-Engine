@@ -63,7 +63,9 @@ def main() -> int:
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(layer_data, indent=2), encoding="utf-8")
     print(f"[+] ATT&CK Navigator Layer exported to {args.out}")
-    print("[+] Open https://mitre-attack.github.io/attack-navigator/ and select 'Open Existing Layer'")
+    print(
+        "[+] Open https://mitre-attack.github.io/attack-navigator/ and select 'Open Existing Layer'"
+    )
     return 0
 
 

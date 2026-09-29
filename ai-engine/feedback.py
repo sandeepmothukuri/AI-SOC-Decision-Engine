@@ -28,10 +28,18 @@ class FeedbackSubmission(BaseModel):
         default=None,
         description="Reason code (e.g., CORRECT_TRIAGE, FALSE_POSITIVE, WRONG_SEVERITY, HALLUCINATED_INDICATOR)",
     )
-    analyst_id: Optional[str] = Field(default="analyst-01", description="Identifier of the reviewing analyst")
-    notes: Optional[str] = Field(default="", description="Optional analyst notes and triage context")
-    corrected_verdict: Optional[str] = Field(default=None, description="Corrected verdict if analyst overrode")
-    corrected_severity: Optional[str] = Field(default=None, description="Corrected severity if analyst adjusted")
+    analyst_id: Optional[str] = Field(
+        default="analyst-01", description="Identifier of the reviewing analyst"
+    )
+    notes: Optional[str] = Field(
+        default="", description="Optional analyst notes and triage context"
+    )
+    corrected_verdict: Optional[str] = Field(
+        default=None, description="Corrected verdict if analyst overrode"
+    )
+    corrected_severity: Optional[str] = Field(
+        default=None, description="Corrected severity if analyst adjusted"
+    )
 
 
 class FeedbackStore:
@@ -72,7 +80,9 @@ class FeedbackStore:
             )
             conn.execute("CREATE INDEX IF NOT EXISTS idx_fb_alert ON analyst_feedback(alert_id);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_fb_action ON analyst_feedback(action);")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_fb_reason ON analyst_feedback(reason_code);")
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_fb_reason ON analyst_feedback(reason_code);"
+            )
             conn.commit()
 
     def record_feedback(

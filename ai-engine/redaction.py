@@ -116,19 +116,23 @@ class Redactor:
 
         # 3. Internal Hostnames
         for pattern in self.INTERNAL_HOST_PATTERNS:
+
             def _replace_host(match):
                 host = match.group(0)
                 counts["hosts"] += 1
                 self._stats["hosts_redacted"] += 1
                 return self._get_host_token(host)
+
             out = pattern.sub(_replace_host, out)
 
         # 4. User profile paths
         for pattern in self.USER_PATH_PATTERNS:
+
             def _replace_path(match):
                 counts["paths"] += 1
                 self._stats["user_paths_redacted"] += 1
                 return f"{match.group(1)}[REDACTED_USER]{match.group(3)}"
+
             out = pattern.sub(_replace_path, out)
 
         return out, counts

@@ -13,16 +13,15 @@ import time
 import uuid
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, PlainTextResponse
-from pydantic import BaseModel
-
 from analyzer import AlertAnalyzer
 from config import Config
 from cortex_client import CortexClient
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, PlainTextResponse
 from feedback import FeedbackSubmission
 from metrics import metrics_registry
+from pydantic import BaseModel
 from schemas import AlertPayload, TriageResult
 from thehive_client import TheHiveClient
 

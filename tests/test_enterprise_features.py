@@ -129,7 +129,9 @@ def test_feedback_drift_detection(tmp_path):
 def test_redactor_private_ip_masking():
     redactor = Redactor(enabled=True)
     # RFC 1918 IPs should be masked, external IPs preserved
-    text = "Traffic from 10.0.1.55 and 192.168.1.100 to public DNS 8.8.8.8 and attacker 185.220.101.45"
+    text = (
+        "Traffic from 10.0.1.55 and 192.168.1.100 to public DNS 8.8.8.8 and attacker 185.220.101.45"
+    )
     sanitized, counts = redactor.redact_text(text)
 
     assert "[INTERNAL_IP_1]" in sanitized
